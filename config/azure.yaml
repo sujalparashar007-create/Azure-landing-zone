@@ -1,0 +1,283 @@
+tenant:
+  id: "59cbaf84-4354-45ff-9649-b586ddfe9335"
+  display_name: "Contoso"
+
+  # --- Tenant / Root-level governance ---
+  policies:
+    - name: "Deny Public IP Creation"
+      definition: "Deny-PublicIP"
+      effect: "Deny"
+
+  iam:
+    "Reader":
+      - "group:azure-security-auditors@example.com"
+
+  # --- Corporate budget configurations ---
+  budgets:
+    security-budget:
+      amount: 500
+      currency: "USD"
+      time_grain: "Monthly"
+      thresholds: [50, 70, 90, 100]
+      notifications:
+        - type: "Email"
+          recipients:
+            - "azure-security-alerts@example.com"
+
+    platform-budget:
+      amount: 2500
+      currency: "USD"
+      time_grain: "Monthly"
+      thresholds: [80, 100]
+      notifications:
+        - type: "Email"
+          recipients:
+            - "azure-ops-alerts@example.com"
+
+
+# ============================================================
+# MANAGEMENT GROUP HIERARCHY
+# ============================================================
+
+management_groups:
+
+  # ----------------------------------------------------------
+  # LEVEL 1 - Platform
+  # ----------------------------------------------------------
+  - name: "mg-platform"
+    display_name: "Core Platform"
+    parent: "tenant-root"
+
+    policies:
+      - name: "Require Azure Resource Locations"
+        definition: "Allowed Locations"
+        parameters:
+          listOfAllowedLocations:
+            - "East US"
+            - "West Europe"
+        effect: "Deny"
+
+      - name: "Require Resource Tags"
+        definition: "Require specified tag on resources"
+        parameters:
+          tagName: "Environment"
+        effect: "Deny"
+
+    iam:
+      "Reader":
+        - "group:azure-security@example.com"
+
+      "Security Administrator":
+        - "group:azure-security-admins@example.com"
+
+    resource_groups: []
+
+    subscriptions: []
+
+    children:
+
+      # ------------------------------------------------------
+      # LEVEL 2 - Shared Services
+      # ------------------------------------------------------
+      - name: "mg-shared-services"
+        display_name: "Core Shared Infrastructure"
+
+        policies:
+          - name: "Deny Public IP"
+            definition: "Deny-PublicIP"
+            effect: "Deny"
+
+        iam:
+          "Reader":
+            - "group:azure-security@example.com"
+
+        subscriptions:
+
+          # --------------------------------------------------
+          # SAMPLE SUBSCRIPTION 1
+          # --------------------------------------------------
+          - name: "sub-shared-ops"
+            display_name: "Shared Operations"
+            billing_scope_id: /providers/Microsoft.Billing/billingAccounts/e1ea7498-fcb8-5fa0-d431-658e1435a459:379eacb6-0df7-4782-bc03-70d367419cbc_2019-05-31/billingProfiles/EQDC-YZLS-BG7-PGB/invoiceSections/cd11e743-b512-4dc5-a954-d56353d804da
+
+            billing_budget:
+              reference: "security-budget"
+
+            resource_groups:
+
+              - name: "rg-shared-ops"
+                location: "eastus"
+
+                resources:
+
+                  - type: "Microsoft.KeyVault/vaults"
+                    name: "kv-shared-secrets"
+
+                  - type: "Microsoft.KeyVault/vaults/keys"
+                    name: "platform-key"
+
+                  - type: "Microsoft.OperationalInsights/workspaces"
+                    name: "law-shared-ops"
+
+            iam:
+              "Key Vault Administrator":
+                - "group:azure-devops@example.com"
+
+
+      # ------------------------------------------------------
+      # LEVEL 2 - Network
+      # ------------------------------------------------------
+      - name: "mg-network"
+        display_name: "Core Network Infrastructure"
+
+        policies:
+          - name: "Deny Public IP"
+            definition: "Deny-PublicIP"
+            effect: "Deny"
+
+          - name: "Allowed Locations"
+            definition: "Allowed locations"
+            parameters:
+              listOfAllowedLocations:
+                - "East US"
+                - "West Europe"
+            effect: "Deny"
+
+        iam:
+          "Network Contributor":
+            - "group:azure-network-team@example.com"
+
+        subscriptions: []
+
+        children:
+
+          # --------------------------------------------------
+          # LEVEL 3 - Production Network
+          # --------------------------------------------------
+          - name: "mg-network-prod"
+            display_name: "Production Network Controls"
+
+            policies:
+              - name: "Require NSG on Subnets"
+                definition: "Require NSG on subnet"
+
+            subscriptions:
+
+              # ----------------------------------------------
+              # SAMPLE SUBSCRIPTION 2
+              # ----------------------------------------------
+              - name: "sub-prod-network"
+                display_name: "Production Network"
+                billing_scope_id: /providers/Microsoft.Billing/billingAccounts/e1ea7498-fcb8-5fa0-d431-658e1435a459:379eacb6-0df7-4782-bc03-70d367419cbc_2019-05-31/billingProfiles/EQDC-YZLS-BG7-PGB/invoiceSections/cd11e743-b512-4dc5-a954-d56353d804da
+
+                resource_groups:
+
+                  - name: "rg-prod-network"
+                    location: "eastus"
+
+                    resources:
+
+                      - type: "Microsoft.Network/virtualNetworks"
+                        name: "vnet-prod-hub"
+
+                      - type: "Microsoft.Network/networkSecurityGroups"
+                        name: "nsg-prod"
+
+                      - type: "Microsoft.Network/azureFirewalls"
+                        name: "afw-prod"
+
+                      - type: "Microsoft.Network/virtualNetworkGateways"
+                        name: "vng-prod"
+
+
+      # ------------------------------------------------------
+      # LEVEL 2 - Production
+      # ------------------------------------------------------
+      - name: "mg-production"
+        display_name: "Production Workloads"
+
+        policies:
+
+          - name: "Deny Public IP"
+            definition: "Deny-PublicIP"
+            effect: "Deny"
+
+          - name: "Allowed Locations"
+            definition: "Allowed locations"
+            parameters:
+              listOfAllowedLocations:
+                - "East US"
+                - "West Europe"
+            effect: "Deny"
+
+        iam:
+          "Reader":
+            - "group:azure-security@example.com"
+
+        subscriptions: []
+
+        children:
+
+          # --------------------------------------------------
+          # LEVEL 3 - Production Applications
+          # --------------------------------------------------
+          - name: "mg-prod-apps"
+            display_name: "Production Business Applications"
+
+            subscriptions: []
+
+            children:
+
+              # ----------------------------------------------
+              # LEVEL 4 - Payments
+              # ----------------------------------------------
+              - name: "mg-prod-payments"
+                display_name: "PCI Compliance Environment"
+
+                policies:
+
+                  - name: "PCI Allowed Locations"
+                    definition: "Allowed locations"
+                    parameters:
+                      listOfAllowedLocations:
+                        - "East US"
+                    effect: "Deny"
+
+                  - name: "Require Encryption"
+                    definition: "Require encryption"
+                    effect: "Audit"
+
+                subscriptions:
+
+                  # ------------------------------------------
+                  # SAMPLE SUBSCRIPTION 3
+                  # ------------------------------------------
+                  - name: "sub-prod-payment"
+                    display_name: "Production Payment Workload"
+                    billing_scope_id: /providers/Microsoft.Billing/billingAccounts/e1ea7498-fcb8-5fa0-d431-658e1435a459:379eacb6-0df7-4782-bc03-70d367419cbc_2019-05-31/billingProfiles/EQDC-YZLS-BG7-PGB/invoiceSections/cd11e743-b512-4dc5-a954-d56353d804da
+
+                    billing_budget:
+                      reference: "security-budget"
+
+                    resource_groups:
+
+                      - name: "rg-prod-payment-app"
+                        location: "eastus"
+
+                        iam:
+                          "Contributor":
+                            - "group:payment-admins@example.com"
+
+                        resources:
+
+                          - type: "Microsoft.Web/sites"
+                            name: "payment-api"
+
+                          - type: "Microsoft.ContainerService/managedClusters"
+                            name: "aks-payment"
+
+                          - type: "Microsoft.KeyVault/vaults"
+                            name: "kv-payment"
+
+                          - type: "Microsoft.Storage/storageAccounts"
+                            name: "stpaymentprod"
