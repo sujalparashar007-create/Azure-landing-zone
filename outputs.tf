@@ -1,9 +1,9 @@
 output "tenant_name" {
-  value = local.config.tenant.display_name
+  value = module.yaml_processing.tenant_name
 }
 
 output "tenant_id" {
-  value = local.config.tenant.id
+  value = module.yaml_processing.tenant_id
 }
 
 output "management_group_hierarchy" {

@@ -1,62 +1,18 @@
 locals {
   # --------------------------------------------------------------------
-  # Flatten the management group tree, tagging each record with its
-  # hierarchy depth (level) and its parent's name. Keying everything by
-  # name (never array index) means the YAML can be freely edited -
-  # groups added, removed, renamed, or reordered - without touching
-  # this module.
+  # Derive hierarchy levels from the flat management_groups map using
+  # parent-chain membership. The yaml-processing module hands us a flat
+  # map (no explicit "level" tag), so we rebuild the levels here: a
+  # group is level N+1 if its parent's name is found among the level N
+  # groups. This is required because a resource cannot reference other
+  # instances of itself via a dynamic for_each key (Terraform "Cycle"
+  # error) - so each level must be its own resource block, referencing
+  # only the previous (distinct) resource address.
   # --------------------------------------------------------------------
-  management_group_records = flatten([
-    for l1 in try(var.config.management_groups, []) : concat(
-      [{
-        name   = l1.name
-        record = l1
-        parent = try(l1.parent, "tenant-root")
-        level  = 1
-      }],
-      flatten([
-        for l2 in try(l1.children, []) : concat(
-          [{
-            name   = l2.name
-            record = l2
-            parent = l1.name
-            level  = 2
-          }],
-          flatten([
-            for l3 in try(l2.children, []) : concat(
-              [{
-                name   = l3.name
-                record = l3
-                parent = l2.name
-                level  = 3
-              }],
-              [
-                for l4 in try(l3.children, []) : {
-                  name   = l4.name
-                  record = l4
-                  parent = l3.name
-                  level  = 4
-                }
-              ]
-            )
-          ])
-        )
-      ])
-    )
-  ])
-
-  management_groups = {
-    for group in local.management_group_records : group.name => group
-  }
-
-  # Split by level - required because a resource cannot reference other
-  # instances of itself via a dynamic for_each key (causes a Terraform
-  # "Cycle" error). Each level instead references the previous level's
-  # resource, which is a distinct resource address.
-  level1_groups = { for g in local.management_group_records : g.name => g if g.level == 1 }
-  level2_groups = { for g in local.management_group_records : g.name => g if g.level == 2 }
-  level3_groups = { for g in local.management_group_records : g.name => g if g.level == 3 }
-  level4_groups = { for g in local.management_group_records : g.name => g if g.level == 4 }
+  level1_groups = { for name, g in var.management_groups : name => g if g.parent == "tenant-root" }
+  level2_groups = { for name, g in var.management_groups : name => g if contains(keys(local.level1_groups), g.parent) }
+  level3_groups = { for name, g in var.management_groups : name => g if contains(keys(local.level2_groups), g.parent) }
+  level4_groups = { for name, g in var.management_groups : name => g if contains(keys(local.level3_groups), g.parent) }
 
   # Merge every level's resulting IDs into a single name -> id lookup,
   # so subscriptions (or any future consumer) can resolve a parent name
@@ -68,65 +24,11 @@ locals {
     { for name, mg in azurerm_management_group.level4 : name => mg.id },
   )
 
-  # --------------------------------------------------------------------
-  # Flatten subscription declarations from every level of the tree,
-  # retaining which management group (by name) each one belongs to.
-  # --------------------------------------------------------------------
-  subscription_records = flatten([
-    for l1 in try(var.config.management_groups, []) :
-    concat(
-      [
-        for subscription in try(l1.subscriptions, []) : {
-          name             = subscription.name
-          display_name     = subscription.display_name
-          billing_scope_id = subscription.billing_scope_id
-          parent           = l1.name
-        }
-      ],
-      flatten([
-        for l2 in try(l1.children, []) :
-        concat(
-          [
-            for subscription in try(l2.subscriptions, []) : {
-              name             = subscription.name
-              display_name     = subscription.display_name
-              billing_scope_id = subscription.billing_scope_id
-              parent           = l2.name
-            }
-          ],
-          flatten([
-            for l3 in try(l2.children, []) :
-            concat(
-              [
-                for subscription in try(l3.subscriptions, []) : {
-                  name             = subscription.name
-                  display_name     = subscription.display_name
-                  billing_scope_id = subscription.billing_scope_id
-                  parent           = l3.name
-                }
-              ],
-              flatten([
-                for l4 in try(l3.children, []) : [
-                  for subscription in try(l4.subscriptions, []) : {
-                    name             = subscription.name
-                    display_name     = subscription.display_name
-                    billing_scope_id = subscription.billing_scope_id
-                    parent           = l4.name
-                  }
-                ]
-              ])
-            )
-          ])
-        )
-      ])
-    )
-  ])
-
   subscriptions = {
-    for subscription in local.subscription_records : subscription.name => {
-      display_name        = subscription.display_name
-      billing_scope_id     = subscription.billing_scope_id
-      management_group_id = local.management_group_ids_by_name[subscription.parent]
+    for name, sub in var.subscriptions : name => {
+      display_name        = sub.display_name
+      billing_scope_id     = sub.billing_scope_id
+      management_group_id = local.management_group_ids_by_name[sub.management_group]
     }
   }
 }
@@ -138,8 +40,8 @@ locals {
 resource "azurerm_management_group" "level1" {
   for_each = local.level1_groups
 
-  name         = each.value.record.name
-  display_name = each.value.record.display_name
+  name         = each.value.name
+  display_name = each.value.display_name
   # Level 1 groups sit directly under the tenant root.
   parent_management_group_id = null
 }
@@ -147,24 +49,24 @@ resource "azurerm_management_group" "level1" {
 resource "azurerm_management_group" "level2" {
   for_each = local.level2_groups
 
-  name                        = each.value.record.name
-  display_name                = each.value.record.display_name
+  name                        = each.value.name
+  display_name                = each.value.display_name
   parent_management_group_id  = azurerm_management_group.level1[each.value.parent].id
 }
 
 resource "azurerm_management_group" "level3" {
   for_each = local.level3_groups
 
-  name                        = each.value.record.name
-  display_name                = each.value.record.display_name
+  name                        = each.value.name
+  display_name                = each.value.display_name
   parent_management_group_id  = azurerm_management_group.level2[each.value.parent].id
 }
 
 resource "azurerm_management_group" "level4" {
   for_each = local.level4_groups
 
-  name                        = each.value.record.name
-  display_name                = each.value.record.display_name
+  name                        = each.value.name
+  display_name                = each.value.display_name
   parent_management_group_id  = azurerm_management_group.level3[each.value.parent].id
 }
 
