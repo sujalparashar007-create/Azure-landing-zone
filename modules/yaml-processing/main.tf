@@ -5,6 +5,11 @@ locals {
 
   landing_zone = yamldecode(file(var.yaml_file))
 
+  # Custom policy YAML lives next to the main YAML file
+  # (config/custom-policy.yaml). It holds the custom policy
+  # assignments and the custom policy definitions.
+  custom_policy_config = yamldecode(file("${dirname(var.yaml_file)}/custom-policy.yaml"))
+
 
   # ----------------------------------------------------------
   # Management Group Hierarchy
@@ -119,9 +124,14 @@ locals {
   # ----------------------------------------------------------
   # Policies (tenant-level + every management group level)
   #
-  # Each policy in the YAML lives wherever it applies (tenant
-  # root or a specific management group), so we walk both
-  # sources and tag each entry with its scope.
+  # Built-in policies live in the main YAML (azure.yaml).
+  # Custom policies live in config/custom-policy.yaml.
+  # Each policy lives wherever it applies (tenant root or a
+  # specific management group), so we walk all sources and tag
+  # each entry with its scope.
+  #
+  # The "== null ? [] :" checks keep this working even when a
+  # policies: key is missing or left empty in the YAML.
   # ----------------------------------------------------------
 
   tenant_policies = [
@@ -146,12 +156,36 @@ locals {
     ]
   ])
 
+  custom_tenant_policies = [
+    for p in try(local.custom_policy_config.tenant.policies, []) : merge(
+      p,
+      {
+        scope_type = "management_group"
+        scope_name = "tenant-root"
+      }
+    )
+  ]
+
+  custom_mg_policies = flatten([
+    for mg in try(local.custom_policy_config.management_groups, []) : [
+      for p in try(mg.policies, []) : merge(
+        p,
+        {
+          scope_type = "management_group"
+          scope_name = mg.name
+        }
+      )
+    ]
+  ])
+
   all_policies_raw = concat(
     local.tenant_policies,
-    local.mg_policies
+    local.mg_policies,
+    local.custom_tenant_policies,
+    local.custom_mg_policies
   )
 
-  custom_policy_definitions = try(local.landing_zone.custom_policy_definitions, {})
+  custom_policy_definitions = try(local.custom_policy_config.custom_policy_definitions, {})
 
   # ----------------------------------------------------------
   # Classify each policy as built-in or custom

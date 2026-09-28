@@ -3,11 +3,6 @@ tenant:
   display_name: "Contoso"
 
   # --- Tenant / Root-level governance ---
-  policies:
-    - name: "Deny Public IP Creation"
-      definition: "Deny-PublicIP"
-      effect: "Deny"
-
   iam:
     "Reader":
       - "group:azure-security-auditors@example.com"
@@ -33,65 +28,6 @@ tenant:
         - type: "Email"
           recipients:
             - "azure-ops-alerts@example.com"
-
-# Custom policy definitions used by the assignments below.
-custom_policy_definitions:
-  Deny-PublicIP:
-    display_name: "Deny Public IP Address Creation"
-    policy_rule:
-      if:
-        field: "type"
-        equals: "Microsoft.Network/publicIPAddresses"
-      then:
-        effect: "[parameters('effect')]"
-    parameters:
-      effect:
-        type: "String"
-        metadata:
-          displayName: "Effect"
-          description: "Enable or disable the execution of the policy"
-        allowedValues: ["Audit", "Deny", "Disabled"]
-        defaultValue: "Deny"
-
-  Require NSG on subnet:
-    display_name: "Require NSG on Subnet"
-    policy_rule:
-      if:
-        allOf:
-          - field: "type"
-            equals: "Microsoft.Network/virtualNetworks/subnets"
-          - field: "Microsoft.Network/virtualNetworks/subnets/networkSecurityGroup.id"
-            exists: "false"
-      then:
-        effect: "[parameters('effect')]"
-    parameters:
-      effect:
-        type: "String"
-        metadata:
-          displayName: "Effect"
-          description: "Enable or disable the execution of the policy"
-        allowedValues: ["Audit", "Deny", "Disabled"]
-        defaultValue: "Deny"
-
-  Require encryption:
-    display_name: "Require Storage Account Encryption"
-    policy_rule:
-      if:
-        allOf:
-          - field: "type"
-            equals: "Microsoft.Storage/storageAccounts"
-          - field: "Microsoft.Storage/storageAccounts/encryption.services.blob.enabled"
-            notEquals: "true"
-      then:
-        effect: "[parameters('effect')]"
-    parameters:
-      effect:
-        type: "String"
-        metadata:
-          displayName: "Effect"
-          description: "Enable or disable the execution of the policy"
-        allowedValues: ["Audit", "Deny", "Disabled"]
-        defaultValue: "Deny"
 
 
 # ============================================================
@@ -141,11 +77,6 @@ management_groups:
       - name: "mg-shared-services"
         display_name: "Core Shared Infrastructure"
 
-        policies:
-          - name: "Deny Public IP"
-            definition: "Deny-PublicIP"
-            effect: "Deny"
-
         iam:
           "Reader":
             - "group:azure-security@example.com"
@@ -190,10 +121,6 @@ management_groups:
         display_name: "Core Network Infrastructure"
 
         policies:
-          - name: "Deny Public IP"
-            definition: "Deny-PublicIP"
-            effect: "Deny"
-
           - name: "Allowed Locations"
             definition: "Allowed locations"
             parameters:
@@ -215,10 +142,6 @@ management_groups:
           # --------------------------------------------------
           - name: "mg-network-prod"
             display_name: "Production Network Controls"
-
-            policies:
-              - name: "Require NSG on Subnets"
-                definition: "Require NSG on subnet"
 
             subscriptions:
 
@@ -256,10 +179,6 @@ management_groups:
         display_name: "Production Workloads"
 
         policies:
-
-          - name: "Deny Public IP"
-            definition: "Deny-PublicIP"
-            effect: "Deny"
 
           - name: "Allowed Locations"
             definition: "Allowed locations"
@@ -301,10 +220,6 @@ management_groups:
                       listOfAllowedLocations:
                         - "East US"
                     effect: "Deny"
-
-                  - name: "Require Encryption"
-                    definition: "Require encryption"
-                    effect: "Audit"
 
                 subscriptions:
 
