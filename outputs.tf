@@ -21,3 +21,7 @@ output "resource_group_configuration" {
 output "resource_configuration" {
   value = module.yaml_processing.resources
 }
+
+output "resource_group_ids" {
+  value = module.resource_groups.resource_group_ids
+}

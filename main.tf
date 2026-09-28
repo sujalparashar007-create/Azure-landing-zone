@@ -57,3 +57,16 @@ module "custom_policy" {
   scope_ids                       = local.policy_scope_ids
   definitions_management_group_id = local.tenant_root_management_group_id
 }
+
+# ==========================================================================
+# RESOURCE GROUPS
+# ==========================================================================
+
+module "resource_groups" {
+  source = "./modules/resource-groups"
+
+  resource_groups = module.yaml_processing.resource_groups
+  subscriptions   = module.management_groups.subscriptions
+
+  depends_on = [module.management_groups]
+}
