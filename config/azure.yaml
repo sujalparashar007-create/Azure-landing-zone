@@ -34,6 +34,65 @@ tenant:
           recipients:
             - "azure-ops-alerts@example.com"
 
+# Custom policy definitions used by the assignments below.
+custom_policy_definitions:
+  Deny-PublicIP:
+    display_name: "Deny Public IP Address Creation"
+    policy_rule:
+      if:
+        field: "type"
+        equals: "Microsoft.Network/publicIPAddresses"
+      then:
+        effect: "[parameters('effect')]"
+    parameters:
+      effect:
+        type: "String"
+        metadata:
+          displayName: "Effect"
+          description: "Enable or disable the execution of the policy"
+        allowedValues: ["Audit", "Deny", "Disabled"]
+        defaultValue: "Deny"
+
+  Require NSG on subnet:
+    display_name: "Require NSG on Subnet"
+    policy_rule:
+      if:
+        allOf:
+          - field: "type"
+            equals: "Microsoft.Network/virtualNetworks/subnets"
+          - field: "Microsoft.Network/virtualNetworks/subnets/networkSecurityGroup.id"
+            exists: "false"
+      then:
+        effect: "[parameters('effect')]"
+    parameters:
+      effect:
+        type: "String"
+        metadata:
+          displayName: "Effect"
+          description: "Enable or disable the execution of the policy"
+        allowedValues: ["Audit", "Deny", "Disabled"]
+        defaultValue: "Deny"
+
+  Require encryption:
+    display_name: "Require Storage Account Encryption"
+    policy_rule:
+      if:
+        allOf:
+          - field: "type"
+            equals: "Microsoft.Storage/storageAccounts"
+          - field: "Microsoft.Storage/storageAccounts/encryption.services.blob.enabled"
+            notEquals: "true"
+      then:
+        effect: "[parameters('effect')]"
+    parameters:
+      effect:
+        type: "String"
+        metadata:
+          displayName: "Effect"
+          description: "Enable or disable the execution of the policy"
+        allowedValues: ["Audit", "Deny", "Disabled"]
+        defaultValue: "Deny"
+
 
 # ============================================================
 # MANAGEMENT GROUP HIERARCHY
@@ -50,7 +109,7 @@ management_groups:
 
     policies:
       - name: "Require Azure Resource Locations"
-        definition: "Allowed Locations"
+        definition: "Allowed locations"
         parameters:
           listOfAllowedLocations:
             - "East US"
@@ -58,7 +117,7 @@ management_groups:
         effect: "Deny"
 
       - name: "Require Resource Tags"
-        definition: "Require specified tag on resources"
+        definition: "Require a tag on resources"
         parameters:
           tagName: "Environment"
         effect: "Deny"

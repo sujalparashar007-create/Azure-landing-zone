@@ -27,7 +27,7 @@ locals {
   subscriptions = {
     for name, sub in var.subscriptions : name => {
       display_name        = sub.display_name
-      billing_scope_id     = sub.billing_scope_id
+      billing_scope_id    = sub.billing_scope_id
       management_group_id = local.management_group_ids_by_name[sub.management_group]
     }
   }
@@ -49,25 +49,25 @@ resource "azurerm_management_group" "level1" {
 resource "azurerm_management_group" "level2" {
   for_each = local.level2_groups
 
-  name                        = each.value.name
-  display_name                = each.value.display_name
-  parent_management_group_id  = azurerm_management_group.level1[each.value.parent].id
+  name                       = each.value.name
+  display_name               = each.value.display_name
+  parent_management_group_id = azurerm_management_group.level1[each.value.parent].id
 }
 
 resource "azurerm_management_group" "level3" {
   for_each = local.level3_groups
 
-  name                        = each.value.name
-  display_name                = each.value.display_name
-  parent_management_group_id  = azurerm_management_group.level2[each.value.parent].id
+  name                       = each.value.name
+  display_name               = each.value.display_name
+  parent_management_group_id = azurerm_management_group.level2[each.value.parent].id
 }
 
 resource "azurerm_management_group" "level4" {
   for_each = local.level4_groups
 
-  name                        = each.value.name
-  display_name                = each.value.display_name
-  parent_management_group_id  = azurerm_management_group.level3[each.value.parent].id
+  name                       = each.value.name
+  display_name               = each.value.display_name
+  parent_management_group_id = azurerm_management_group.level3[each.value.parent].id
 }
 
 # ==========================================================================
@@ -78,7 +78,7 @@ resource "azurerm_subscription" "this" {
   for_each = local.subscriptions
 
   subscription_name = each.value.display_name
-  billing_scope_id   = each.value.billing_scope_id
+  billing_scope_id  = each.value.billing_scope_id
 }
 
 # ==========================================================================
@@ -89,5 +89,5 @@ resource "azurerm_management_group_subscription_association" "this" {
   for_each = local.subscriptions
 
   management_group_id = each.value.management_group_id
-  subscription_id      = "/subscriptions/${azurerm_subscription.this[each.key].subscription_id}"
+  subscription_id     = "/subscriptions/${azurerm_subscription.this[each.key].subscription_id}"
 }

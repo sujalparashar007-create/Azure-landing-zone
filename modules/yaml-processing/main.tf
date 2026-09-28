@@ -107,14 +107,103 @@ locals {
         for resource in try(rg.resources, []) : merge(
           resource,
           {
-            subscription  = sub.name
+            subscription   = sub.name
             resource_group = rg.name
-            location      = rg.location
+            location       = rg.location
           }
         )
       ]
     ]
   ])
+
+  # ----------------------------------------------------------
+  # Policies (tenant-level + every management group level)
+  #
+  # Each policy in the YAML lives wherever it applies (tenant
+  # root or a specific management group), so we walk both
+  # sources and tag each entry with its scope.
+  # ----------------------------------------------------------
+
+  tenant_policies = [
+    for p in try(local.landing_zone.tenant.policies, []) : merge(
+      p,
+      {
+        scope_type = "management_group"
+        scope_name = "tenant-root"
+      }
+    )
+  ]
+
+  mg_policies = flatten([
+    for mg in local.management_groups : [
+      for p in try(mg.policies, []) : merge(
+        p,
+        {
+          scope_type = "management_group"
+          scope_name = mg.name
+        }
+      )
+    ]
+  ])
+
+  all_policies_raw = concat(
+    local.tenant_policies,
+    local.mg_policies
+  )
+
+  custom_policy_definitions = try(local.landing_zone.custom_policy_definitions, {})
+
+  # ----------------------------------------------------------
+  # Classify each policy as built-in or custom
+  #
+  # Classification is driven by the `definition` field, matched
+  # case-insensitively against a known list of real Azure
+  # built-in policy display names. Anything not in this list is
+  # treated as custom.
+  # ----------------------------------------------------------
+
+  builtin_definition_names = [
+    "allowed locations",
+    "require a tag on resources",
+  ]
+
+  all_policies = [
+    for p in local.all_policies_raw : {
+      name                  = p.name
+      definition            = p.definition
+      scope_type            = p.scope_type
+      scope_name            = p.scope_name
+      effect                = try(p.effect, "Deny")
+      parameters            = try(p.parameters, {})
+      display_name          = try(local.custom_policy_definitions[p.definition].display_name, null)
+      policy_rule           = try(local.custom_policy_definitions[p.definition].policy_rule, null)
+      definition_parameters = try(local.custom_policy_definitions[p.definition].parameters, null)
+      policy_type           = contains(local.builtin_definition_names, lower(p.definition)) ? "built-in" : "custom"
+    }
+  ]
+
+
+  # ----------------------------------------------------------
+  # Split into built-in vs custom, converted to maps
+  # ----------------------------------------------------------
+
+  builtin_policies = [
+    for p in local.all_policies : p if p.policy_type == "built-in"
+  ]
+
+  custom_policies = [
+    for p in local.all_policies : p if p.policy_type == "custom"
+  ]
+
+  builtin_policies_map = {
+    for p in local.builtin_policies :
+    "${p.scope_name}-${p.name}" => p
+  }
+
+  custom_policies_map = {
+    for p in local.custom_policies :
+    "${p.scope_name}-${p.name}" => p
+  }
 
 
   # ----------------------------------------------------------
@@ -164,6 +253,7 @@ resource "null_resource" "yaml_flatten" {
         subscriptions     = local.subscriptions
         resource_groups   = local.resource_groups
         resources         = local.resources
+        policies          = local.all_policies
       })
     )
   }

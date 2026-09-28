@@ -13,3 +13,11 @@ output "management_group_hierarchy" {
 output "subscription_placement" {
   value = module.management_groups.subscriptions
 }
+
+output "resource_group_configuration" {
+  value = module.yaml_processing.resource_groups
+}
+
+output "resource_configuration" {
+  value = module.yaml_processing.resources
+}

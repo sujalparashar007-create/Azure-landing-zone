@@ -18,6 +18,16 @@ output "resources" {
   value       = local.resources_map
 }
 
+output "builtin_policies" {
+  description = "Flattened built-in policies with scope (tenant root or management group)"
+  value       = local.builtin_policies_map
+}
+
+output "custom_policies" {
+  description = "Flattened custom policies with scope (tenant root or management group)"
+  value       = local.custom_policies_map
+}
+
 output "yaml_processing_id" {
   description = "ID of the YAML processing null_resource"
   value       = null_resource.yaml_flatten.id
