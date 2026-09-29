@@ -18,6 +18,11 @@ output "resources" {
   value       = local.resources_map
 }
 
+output "iam_assignments" {
+  description = "Flattened IAM assignments with tenant, management group, and resource group scopes"
+  value       = local.iam_assignments_map
+}
+
 output "builtin_policies" {
   description = "Flattened built-in policies with scope (tenant root or management group)"
   value       = local.builtin_policies_map

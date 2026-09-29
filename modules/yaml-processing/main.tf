@@ -5,10 +5,10 @@ locals {
 
   landing_zone = yamldecode(file(var.yaml_file))
 
-  # Custom policy YAML lives next to the main YAML file
-  # (config/custom-policy.yaml). It holds the custom policy
-  # assignments and the custom policy definitions.
-  custom_policy_config = yamldecode(file("${dirname(var.yaml_file)}/custom-policy.yaml"))
+  # Custom policy YAML lives with the main YAML in this module.
+  # It holds the custom policy assignments and the custom policy
+  # definitions.
+  custom_policy_config = yamldecode(file("${path.module}/config/custom-policy.yaml"))
 
 
   # ----------------------------------------------------------
@@ -100,6 +100,62 @@ locals {
       )
     ]
   ])
+
+  # ----------------------------------------------------------
+  # IAM assignments
+  #
+  # Principals are kept as their source strings (for example,
+  # group:azure-security@example.com). The IAM module resolves
+  # group email addresses to Entra ID object IDs.
+  # ----------------------------------------------------------
+
+  tenant_iam = flatten([
+    for role, principals in try(coalesce(try(local.landing_zone.tenant.iam, null), {}), {}) : [
+      for principal in principals : {
+        scope_type = "management_group"
+        scope_name = "tenant-root"
+        role       = role
+        principal  = principal
+      }
+    ]
+  ])
+
+  management_group_iam = flatten([
+    for mg in local.management_groups : [
+      for role, principals in try(coalesce(try(mg.iam, null), {}), {}) : [
+        for principal in principals : {
+          scope_type = "management_group"
+          scope_name = mg.name
+          role       = role
+          principal  = principal
+        }
+      ]
+    ]
+  ])
+
+  resource_group_iam = flatten([
+    for rg in local.resource_groups : [
+      for role, principals in try(coalesce(try(rg.iam, null), {}), {}) : [
+        for principal in principals : {
+          scope_type = "resource_group"
+          scope_name = "${rg.subscription}/${rg.name}"
+          role       = role
+          principal  = principal
+        }
+      ]
+    ]
+  ])
+
+  iam_assignments = concat(
+    local.tenant_iam,
+    local.management_group_iam,
+    local.resource_group_iam
+  )
+
+  iam_assignments_map = {
+    for assignment in local.iam_assignments :
+    "${assignment.scope_type}/${assignment.scope_name}/${assignment.role}/${assignment.principal}" => assignment
+  }
 
 
   # ----------------------------------------------------------

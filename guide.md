@@ -1,42 +1,132 @@
-CONTEXT
-Azure Landing Zone Terraform project. Run all Terraform commands from the repo ROOT only, never inside a module folder. Shell is Git Bash on Windows.
+Refactor this Terraform Azure Landing Zone project to remove the root-level Terraform dependency and make each required module independently runnable.
 
-Layout: root main.tf/variables.tf/outputs.tf/providers.tf, config/azure.yaml (source of truth), modules/yaml-processing, modules/management-groups, modules/policies/built-in-policy, modules/policies/custom-policy.
+IMPORTANT: This is an architecture refactor, not a resource/infrastructure redesign.
 
-Current state (fully applied, terraform plan = "No changes"):
-- yaml-processing decodes azure.yaml once, flattens everything, classifies policies into builtin_policies / custom_policies, and has null_resource.yaml_flatten with sha256 triggers (its hash includes the policies).
-- modules/policies/custom-policy/main.tf creates ONE azurerm_policy_definition.this per unique definition key (for_each over local.custom_policy_definitions built from var.policies, using policy_rule, display_name, definition_parameters) at var.definitions_management_group_id (tenant root MG), plus azurerm_management_group_policy_assignment.this per policy.
-- Existing custom definitions: "Deny-PublicIP", "Require NSG on subnet", "Require encryption". There are 6 custom assignments.
-- custom-policy/main.tf also contains a recently added azurerm_role_assignment.policy_definition_writer + time_sleep.role_propagation (fix for the policyDefinitions/write 403). DO NOT modify, move or remove this role-assignment/time_sleep code or the depends_on that uses it.
+GOAL:
+The current root `main.tf`, `variables.tf`, `providers.tf`, and `outputs.tf` create dependencies between the root module and child modules. Refactor the project so that the required Terraform logic/configuration is owned by the appropriate modules.
 
-TASK (from my instructor)
-The custom policy details/code (the custom policy definition content: policy_rule JSON, display_name, definition parameters, and any hardcoded custom policy rule block, wherever it currently lives) must be moved out into a SEPARATE module named "custom-yaml" located at modules/yaml-processing/custom-yaml/. If moving it causes ANY change anywhere else in the project, you must FIRST show me every change and only fix it AFTER I confirm.
+Required target architecture:
 
-WORKFLOW: follow these stages in order and stop at each gate.
+- `yaml-processing` owns and reads:
+  - `modules/yaml-processing/config/azure.yaml`
+  - `modules/yaml-processing/config/custom-policy.yaml`
+- Other functional modules should consume the required flattened/configuration outputs through their own module configuration and should not depend on the root `main.tf`.
+- Each functional module must be independently runnable from inside its own directory with Terraform commands.
+- The root Terraform module should no longer be required.
 
-STAGE 1: read-only investigation (change NOTHING)
-1. Find exactly where the custom policy details/code currently live (file + line ranges): the policy_rule JSON, display_name, definition parameters, any local.custom_policy_rules-style block, and how they reach the custom-policy module (through yaml-processing outputs, root main.tf, or hardcoded).
-2. Say clearly what you understand by "a separate module named custom-yaml inside yaml-processing". Default interpretation: a child module folder modules/yaml-processing/custom-yaml/ with the standard 3 files (main.tf, variables.tf, outputs.tf) that holds the custom policy definition details and exposes them as outputs. If you see another reasonable interpretation, state it and ask me before continuing.
+TASK:
 
-STAGE 2: proposal only (still change NOTHING)
-Give me a written plan containing:
-a) The exact block(s) to move, source -> destination, with file paths.
-b) The new module's inputs and outputs, and how yaml-processing will call it.
-c) A full IMPACT LIST: every other file that would need to change because of this move (root main.tf, root outputs.tf, yaml-processing outputs/variables, custom-policy variables.tf/main.tf, azure.yaml, README, etc.), each with file, line range, what changes and why. If nothing else needs to change, say "no other changes".
-d) Terraform state impact. Resource addresses such as module.custom_policy.azurerm_policy_definition.this["Deny-PublicIP"] must stay identical, with NO destroy/recreate of any definition, assignment, MG, subscription or the role assignment. If any address would change, propose moved blocks and show them.
-e) Note that the null_resource.yaml_flatten trigger hash may change because the structure changed, which would show as a null_resource replacement in plan. Tell me if this will happen. It is acceptable, but report it.
-STOP after this and wait for my explicit confirmation.
+1. FIRST inspect the entire repository and map:
+   - every block in root `main.tf`
+   - every variable in root `variables.tf`
+   - every provider configuration in root `providers.tf`
+   - every output in root `outputs.tf`
+   - all module dependencies
+   - all references between modules
+   - all YAML/config file references
+   - all resource dependencies and scopes.
 
-STAGE 3: implementation (only after I say "confirmed")
-1. Create modules/yaml-processing/custom-yaml/ and move only the approved blocks. Keep the 3-file module structure. Do not move any Azure resource blocks (azurerm_*) out of custom-policy.
-2. Apply ONLY the changes listed in the approved impact list. If you discover an additional needed change, STOP, show it to me and wait for confirmation.
-3. Run from repo root: terraform fmt -recursive, terraform init, terraform validate, terraform plan. Do NOT run terraform apply.
-4. Show me the full plan output. Target result: "No changes" (or only the null_resource replacement if I approved it). If anything else appears (any azurerm_* create/change/destroy), stop and explain.
+2. Determine which root blocks belong to which module.
+   Move each block into the appropriate module's `main.tf`, `variables.tf`, `providers.tf` only when genuinely required, and `outputs.tf`.
 
-RULES
-- Do not rebuild or rewrite completed work; change the minimum needed.
-- One logical module per concern; every module keeps main.tf, variables.tf, outputs.tf.
-- Policy behaviour must stay the same: same 3 definitions, same 6 assignments, same scopes and effects (Deny-PublicIP: Deny at tenant-root, mg-network, mg-production, mg-shared-services; Require NSG on subnet: Deny at mg-network-prod; Require encryption: Audit at mg-prod-payments).
-- Do not touch config/azure.yaml unless the impact list includes it and I confirmed.
-- Never run terraform apply or destroy, and never delete state files.
-- Show diffs before and after; explain each change in simple words.
+3. Preserve the existing module convention where applicable:
+   - `main.tf`
+   - `variables.tf`
+   - `outputs.tf`
+   - do NOT create `providers.tf` inside a module unless that module genuinely requires its own provider configuration.
+   - Keep modules clean and self-contained.
+
+4. `yaml-processing` must remain the central configuration-processing layer:
+   - It owns both YAML files under `modules/yaml-processing/config/`.
+   - It should continue producing the flattened configuration required by downstream modules.
+   - Do NOT change the contents of `azure.yaml` or `custom-policy.yaml`.
+   - Do NOT duplicate YAML parsing logic across modules.
+
+5. Remove unnecessary dependency on root `main.tf`.
+   Functional modules should receive only the inputs they actually need and should not rely on resources or locals that exist only because of the root module.
+
+6. Make each required functional module independently runnable.
+   For example, a module should be able to run:
+   
+   `terraform init`
+   `terraform validate`
+   `terraform plan`
+
+   from its own directory without requiring the root `main.tf`.
+
+   If a module requires outputs from `yaml-processing`, design the dependency cleanly so the module can consume the required configuration without recreating the root-level orchestration dependency.
+
+7. Preserve all existing Azure resource behavior:
+   - Management Groups
+   - Subscriptions
+   - Resource Groups
+   - Policies
+   - Custom Policies
+   - IAM/RBAC
+   - YAML processing
+   - all existing resources, names, IDs, scopes, assignments and relationships.
+
+8. DO NOT:
+   - redesign the infrastructure
+   - rename existing Azure resources
+   - change resource IDs
+   - change YAML contents
+   - manually modify Terraform state
+   - recreate resources unnecessarily
+   - remove required functionality
+   - change policy definitions/assignments
+   - change RBAC intent
+   - run `terraform apply`
+   - run `terraform destroy`.
+
+9. Before deleting anything from the root:
+   - verify that every required root block has been moved/replaced.
+   - verify all references are updated.
+   - verify no module still depends on the root module.
+   - search the entire repository for stale references.
+
+10. Once the migration is complete:
+   - remove root `main.tf`
+   - remove root `variables.tf`
+   - remove root `providers.tf`
+   - remove root `outputs.tf`
+   - remove any other root Terraform file that is no longer required.
+   - Do NOT delete `terraform.tfstate` or any state-related file unless it is clearly an unnecessary generated artifact and you explain it first.
+
+11. IMPORTANT STATE SAFETY:
+   Before finalizing, compare the resulting Terraform configuration against the current state and ensure the refactor does not cause existing Azure resources to appear as destroy/recreate operations.
+
+12. Validation:
+   Run `terraform fmt` on the complete project.
+
+   Then validate each independently runnable module from its own directory using:
+   `terraform init`
+   `terraform validate`
+   `terraform plan`
+
+   Do NOT apply anything.
+
+13. For every module plan:
+   - If it shows `No changes`, report that.
+   - If it proposes Add/Change/Destroy, STOP and investigate why before making further changes.
+   - Do not accept unexpected resource changes just to make the plan pass.
+
+14. Final verification:
+   - Confirm root Terraform orchestration files have been removed.
+   - Confirm all required modules are self-contained.
+   - Confirm no stale root-module references remain.
+   - Confirm YAML files remain under `modules/yaml-processing/config/`.
+   - Confirm YAML contents are unchanged.
+   - Confirm existing infrastructure has no unexpected Terraform drift.
+
+At the end, give me:
+1. Final directory structure.
+2. List of root blocks moved and their destination modules.
+3. List of files changed.
+4. List of files deleted.
+5. Module dependency flow.
+6. Validation result for every module.
+7. Terraform plan result for every module.
+8. Confirmation that no `terraform apply` or `terraform destroy` was executed.
+
+Do not make assumptions. Inspect the actual repository first and perform the refactor based on the existing code.

@@ -1,7 +1,7 @@
 module "yaml_processing" {
   source = "./modules/yaml-processing"
 
-  yaml_file = var.yaml_file
+  yaml_file = startswith(var.yaml_file, "/") || startswith(var.yaml_file, ".") ? var.yaml_file : "${path.module}/${var.yaml_file}"
 }
 
 # ==========================================================================
@@ -69,4 +69,21 @@ module "resource_groups" {
   subscriptions   = module.management_groups.subscriptions
 
   depends_on = [module.management_groups]
+}
+
+# ==========================================================================
+# IAM / RBAC
+# ==========================================================================
+
+module "iam" {
+  source = "./modules/iam"
+
+  assignments = module.yaml_processing.iam_assignments
+  scope_ids = merge(
+    { "tenant-root" = local.tenant_root_management_group_id },
+    module.management_groups.management_group_ids,
+    module.resource_groups.resource_group_ids
+  )
+
+  depends_on = [module.management_groups, module.resource_groups]
 }
