@@ -19,8 +19,13 @@ output "resources" {
 }
 
 output "iam_assignments" {
-  description = "Flattened IAM assignments with tenant, management group, and resource group scopes"
+  description = "Flattened IAM assignments with tenant, management group, subscription, and resource group scopes"
   value       = local.iam_assignments_map
+}
+
+output "users" {
+  description = "Map of IAM principal sign-in email to Entra ID user object id"
+  value       = local.users
 }
 
 output "builtin_policies" {

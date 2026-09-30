@@ -6,7 +6,9 @@ module "yaml_processing" {
 
 # Resolve each YAML subscription (keyed by name) to its live Azure
 # subscription ID. The subscriptions are created by the management-groups
-# module (separate state), so we look them up here by display name.
+# module (separate state), so we look them up here by display name,
+# matching only enabled subscriptions (disabled/deleted ones may linger
+# with the same display name).
 # `one()` makes the lookup deterministic: it errors on duplicate display
 # names and returns null when there is no match (validated below).
 data "azurerm_subscriptions" "available" {}
@@ -17,13 +19,14 @@ locals {
     name => one([
       for s in data.azurerm_subscriptions.available.subscriptions :
       s.subscription_id
-      if s.display_name == sub.display_name
+      if s.display_name == sub.display_name && s.state == "Enabled"
     ])
   }
 
-  user_principal_names = toset([
-    for assignment in module.yaml_processing.iam_assignments : assignment.principal
-  ])
+  principal_object_ids = {
+    for principal in distinct([for assignment in module.yaml_processing.iam_assignments : assignment.principal]) :
+    principal => try(module.yaml_processing.users[principal].object_id, principal)
+  }
 
   role_names = toset([
     for assignment in module.yaml_processing.iam_assignments : assignment.role
@@ -32,6 +35,7 @@ locals {
   scope_ids = merge(
     { "tenant-root" = "/providers/Microsoft.Management/managementGroups/${module.yaml_processing.tenant_id}" },
     { for name, mg in module.yaml_processing.management_groups : name => "/providers/Microsoft.Management/managementGroups/${mg.name}" },
+    { for name, sub in module.yaml_processing.subscriptions : name => "/subscriptions/${local.subscription_ids[name]}" },
     {
       for key, rg in module.yaml_processing.resource_groups : key =>
       "/subscriptions/${local.subscription_ids[rg.subscription]}/resourceGroups/${rg.name}"
@@ -49,9 +53,9 @@ check "subscriptions_resolvable" {
 }
 
 data "azuread_user" "this" {
-  for_each = local.user_principal_names
+  for_each = local.principal_object_ids
 
-  user_principal_name = each.value
+  object_id = each.value
 }
 
 data "azurerm_role_definition" "this" {

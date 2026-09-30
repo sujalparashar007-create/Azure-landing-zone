@@ -5,7 +5,7 @@ tenant:
   # --- Tenant / Root-level governance ---
   iam:
     "Reader":
-      - "azure-security-auditors@example.com"
+      - "sujalparashar700@gmail.com"
 
   # --- Corporate budget configurations ---
   budgets:
@@ -28,6 +28,14 @@ tenant:
         - type: "Email"
           recipients:
             - "azure-ops-alerts@example.com"
+
+
+# --- IAM user directory object IDs ---
+# External (#EXT#) users have a directory UPN that differs from their
+# sign-in email, so we map the sign-in email to its Entra ID object id.
+users:
+  "sujalparashar700@gmail.com":
+    object_id: "7452eab3-30b8-42b8-a9d4-a3d07a495ad3"
 
 
 # ============================================================
@@ -60,10 +68,10 @@ management_groups:
 
     iam:
       "Reader":
-        - "azure-security@example.com"
+        - "sujalparashar700@gmail.com"
 
-      "Security Administrator":
-        - "azure-security-admins@example.com"
+      "Security Admin":
+        - "sujalparashar700@gmail.com"
 
     resource_groups: []
 
@@ -79,7 +87,7 @@ management_groups:
 
         iam:
           "Reader":
-            - "azure-security@example.com"
+            - "sujalparashar700@gmail.com"
 
         subscriptions:
 
@@ -111,7 +119,7 @@ management_groups:
 
             iam:
               "Key Vault Administrator":
-                - "azure-devops@example.com"
+                - "sujalparashar700@gmail.com"
 
 
       # ------------------------------------------------------
@@ -131,7 +139,7 @@ management_groups:
 
         iam:
           "Network Contributor":
-            - "azure-network-team@example.com"
+            - "sujalparashar700@gmail.com"
 
         subscriptions: []
 
@@ -190,7 +198,7 @@ management_groups:
 
         iam:
           "Reader":
-            - "azure-security@example.com"
+            - "sujalparashar700@gmail.com"
 
         subscriptions: []
 
@@ -240,7 +248,7 @@ management_groups:
 
                         iam:
                           "Contributor":
-                            - "payment-admins@example.com"
+                            - "sujalparashar700@gmail.com"
 
                         resources:
 

@@ -10,6 +10,10 @@ locals {
   # definitions.
   custom_policy_config = yamldecode(file("${path.module}/config/custom-policy.yaml"))
 
+  # IAM user directory object ids, keyed by sign-in email. Used to resolve
+  # external (#EXT#) users whose directory UPN differs from their email.
+  users = try(local.landing_zone.users, {})
+
 
   # ----------------------------------------------------------
   # Management Group Hierarchy
@@ -133,6 +137,19 @@ locals {
     ]
   ])
 
+  subscription_iam = flatten([
+    for sub in local.subscriptions : [
+      for role, principals in try(coalesce(try(sub.iam, null), {}), {}) : [
+        for principal in principals : {
+          scope_type = "subscription"
+          scope_name = sub.name
+          role       = role
+          principal  = principal
+        }
+      ]
+    ]
+  ])
+
   resource_group_iam = flatten([
     for rg in local.resource_groups : [
       for role, principals in try(coalesce(try(rg.iam, null), {}), {}) : [
@@ -149,6 +166,7 @@ locals {
   iam_assignments = concat(
     local.tenant_iam,
     local.management_group_iam,
+    local.subscription_iam,
     local.resource_group_iam
   )
 

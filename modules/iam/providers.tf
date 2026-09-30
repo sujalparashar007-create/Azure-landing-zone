@@ -16,4 +16,6 @@ provider "azurerm" {
   features {}
 }
 
-provider "azuread" {}
+provider "azuread" {
+  use_cli = true
+}

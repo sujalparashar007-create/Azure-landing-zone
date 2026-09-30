@@ -1,35 +1,17 @@
-Fix ONLY the built-in-policy `effect` handling.
+Fix only the currently identified IAM blockers.
 
-Current error:
-`UndefinedPolicyParameter: parameter(s) 'effect' are not defined in the policy definition`
-
-Problem:
-The module currently passes YAML `effect` as an assignment parameter to every built-in policy, but some built-in policy definitions do not declare an `effect` parameter.
-
-Fix the implementation correctly:
-
-1. Inspect each built-in policy definition's actual parameters.
-2. Pass YAML `effect` ONLY when the referenced policy definition actually declares an `effect` parameter.
-3. If the policy definition does not declare `effect`, do NOT send it in `parameters`.
-4. Keep the YAML `effect` value intact and YAML-driven.
-5. Do NOT hard-code which policy names support `effect`.
-6. Do NOT bring back the old `builtin_definition_names` allowlist.
-7. Preserve the existing `for_each`, policy names, scopes, and Terraform addresses.
-8. Do NOT modify YAML unless the existing YAML structure itself is invalid.
-9. Do NOT touch state.
-10. Do NOT create extra files.
-
-After the fix run:
-terraform fmt
-terraform init
-terraform validate
-terraform plan
-
-Do NOT run apply yet.
-
-Report:
-- how the module detects whether `effect` is a valid parameter
-- which current built-in policies receive `effect`
-- which do not
-- plan result
-- any remaining issue
+1. Keep modules/iam fully standalone and YAML-driven.
+2. Keep `sujalparashar700@gmail.com` as the IAM principal in azure.yaml.
+3. Since this is an external/#EXT# user, change the azuread_user lookup so it reliably resolves the existing user object without hard-coding the principal into the Terraform resource logic.
+   Known existing object ID:
+   7452eab3-30b8-42b8-a9d4-a3d07a495ad3
+   Prefer a YAML-driven solution; do not hard-code this ID in main.tf.
+4. Reconcile the IAM role name `Security Administrator` with the role that actually exists in this tenant: `Security Admin`.
+   Keep the role assignment YAML-driven; do not hard-code role IDs.
+5. Fix the subscription-level IAM flattening issue in `modules/yaml-processing` so the existing subscription-scoped `Key Vault Administrator` assignment under `sub-shared-ops` reaches `iam_assignments`.
+6. Do not change unrelated modules or existing IAM scopes/roles.
+7. Preserve all existing `for_each` logic.
+8. Do not remove any IAM assignment.
+9. Do not create a root module or any extra files.
+10. After edits, only run `terraform fmt` and `terraform validate` for the affected module(s). Do NOT run plan/apply/destroy.
+11. Report exactly which files changed and summarize the fixes and validation results.
