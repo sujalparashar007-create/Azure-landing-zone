@@ -6,7 +6,9 @@ module "yaml_processing" {
 
 # Resolve each YAML subscription (keyed by name) to its live Azure
 # subscription ID. The subscriptions are created by the management-groups
-# module (separate state), so we look them up here by display name.
+# module (separate state), so we look them up here by display name,
+# matching only enabled subscriptions (disabled/deleted ones may linger
+# with the same display name).
 # `one()` makes the lookup deterministic: it errors on duplicate display
 # names and returns null when there is no match (validated below).
 data "azurerm_subscriptions" "available" {}
@@ -17,7 +19,7 @@ locals {
     name => one([
       for s in data.azurerm_subscriptions.available.subscriptions :
       s.subscription_id
-      if s.display_name == sub.display_name
+      if s.display_name == sub.display_name && s.state == "Enabled"
     ])
   }
 }
