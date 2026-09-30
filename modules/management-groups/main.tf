@@ -1,3 +1,9 @@
+module "yaml_processing" {
+  source = "../yaml-processing"
+
+  yaml_file = coalesce(var.yaml_file, "${path.module}/../yaml-processing/config/azure.yaml")
+}
+
 locals {
   # --------------------------------------------------------------------
   # Derive hierarchy levels from the flat management_groups map using
@@ -9,10 +15,10 @@ locals {
   # error) - so each level must be its own resource block, referencing
   # only the previous (distinct) resource address.
   # --------------------------------------------------------------------
-  level1_groups = { for name, g in var.management_groups : name => g if g.parent == "tenant-root" }
-  level2_groups = { for name, g in var.management_groups : name => g if contains(keys(local.level1_groups), g.parent) }
-  level3_groups = { for name, g in var.management_groups : name => g if contains(keys(local.level2_groups), g.parent) }
-  level4_groups = { for name, g in var.management_groups : name => g if contains(keys(local.level3_groups), g.parent) }
+  level1_groups = { for name, g in module.yaml_processing.management_groups : name => g if g.parent == "tenant-root" }
+  level2_groups = { for name, g in module.yaml_processing.management_groups : name => g if contains(keys(local.level1_groups), g.parent) }
+  level3_groups = { for name, g in module.yaml_processing.management_groups : name => g if contains(keys(local.level2_groups), g.parent) }
+  level4_groups = { for name, g in module.yaml_processing.management_groups : name => g if contains(keys(local.level3_groups), g.parent) }
 
   # Merge every level's resulting IDs into a single name -> id lookup,
   # so subscriptions (or any future consumer) can resolve a parent name
@@ -25,7 +31,7 @@ locals {
   )
 
   subscriptions = {
-    for name, sub in var.subscriptions : name => {
+    for name, sub in module.yaml_processing.subscriptions : name => {
       display_name        = sub.display_name
       billing_scope_id    = sub.billing_scope_id
       management_group_id = local.management_group_ids_by_name[sub.management_group]

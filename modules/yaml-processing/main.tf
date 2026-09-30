@@ -104,9 +104,9 @@ locals {
   # ----------------------------------------------------------
   # IAM assignments
   #
-  # Principals are kept as their source strings (for example,
-  # group:azure-security@example.com). The IAM module resolves
-  # group email addresses to Entra ID object IDs.
+  # Principals are kept as user principal names (UPNs), for
+  # example azure-security@example.com. The IAM module resolves
+  # each UPN to an Entra ID user object ID.
   # ----------------------------------------------------------
 
   tenant_iam = flatten([
@@ -194,8 +194,9 @@ locals {
     for p in try(local.landing_zone.tenant.policies, []) : merge(
       p,
       {
-        scope_type = "management_group"
-        scope_name = "tenant-root"
+        scope_type  = "management_group"
+        scope_name  = "tenant-root"
+        policy_type = "built-in"
       }
     )
   ]
@@ -205,8 +206,9 @@ locals {
       for p in try(mg.policies, []) : merge(
         p,
         {
-          scope_type = "management_group"
-          scope_name = mg.name
+          scope_type  = "management_group"
+          scope_name  = mg.name
+          policy_type = "built-in"
         }
       )
     ]
@@ -216,8 +218,9 @@ locals {
     for p in try(local.custom_policy_config.tenant.policies, []) : merge(
       p,
       {
-        scope_type = "management_group"
-        scope_name = "tenant-root"
+        scope_type  = "management_group"
+        scope_name  = "tenant-root"
+        policy_type = "custom"
       }
     )
   ]
@@ -227,8 +230,9 @@ locals {
       for p in try(mg.policies, []) : merge(
         p,
         {
-          scope_type = "management_group"
-          scope_name = mg.name
+          scope_type  = "management_group"
+          scope_name  = mg.name
+          policy_type = "custom"
         }
       )
     ]
@@ -244,18 +248,12 @@ locals {
   custom_policy_definitions = try(local.custom_policy_config.custom_policy_definitions, {})
 
   # ----------------------------------------------------------
-  # Classify each policy as built-in or custom
+  # Policy type (built-in vs custom)
   #
-  # Classification is driven by the `definition` field, matched
-  # case-insensitively against a known list of real Azure
-  # built-in policy display names. Anything not in this list is
-  # treated as custom.
+  # The type is carried through from the source YAML: policies in
+  # azure.yaml are built-in, policies in custom-policy.yaml are
+  # custom. No name-based allowlist is required.
   # ----------------------------------------------------------
-
-  builtin_definition_names = [
-    "allowed locations",
-    "require a tag on resources",
-  ]
 
   all_policies = [
     for p in local.all_policies_raw : {
@@ -268,7 +266,7 @@ locals {
       display_name          = try(local.custom_policy_definitions[p.definition].display_name, null)
       policy_rule           = try(local.custom_policy_definitions[p.definition].policy_rule, null)
       definition_parameters = try(local.custom_policy_definitions[p.definition].parameters, null)
-      policy_type           = contains(local.builtin_definition_names, lower(p.definition)) ? "built-in" : "custom"
+      policy_type           = p.policy_type
     }
   ]
 

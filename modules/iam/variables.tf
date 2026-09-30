@@ -1,9 +1,6 @@
-variable "assignments" {
-  description = "Flattened IAM assignments keyed by scope, role, and principal."
-  type        = any
-}
-
-variable "scope_ids" {
-  description = "Map of logical IAM scope names to Azure resource IDs."
-  type        = map(string)
+variable "yaml_file" {
+  description = "Optional path to the landing-zone YAML configuration. When null, uses yaml-processing/config/azure.yaml."
+  type        = string
+  default     = null
+  nullable    = true
 }

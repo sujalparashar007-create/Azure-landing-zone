@@ -5,7 +5,7 @@ tenant:
   # --- Tenant / Root-level governance ---
   iam:
     "Reader":
-      - "group:azure-security-auditors@example.com"
+      - "azure-security-auditors@example.com"
 
   # --- Corporate budget configurations ---
   budgets:
@@ -60,10 +60,10 @@ management_groups:
 
     iam:
       "Reader":
-        - "group:azure-security@example.com"
+        - "azure-security@example.com"
 
       "Security Administrator":
-        - "group:azure-security-admins@example.com"
+        - "azure-security-admins@example.com"
 
     resource_groups: []
 
@@ -79,7 +79,7 @@ management_groups:
 
         iam:
           "Reader":
-            - "group:azure-security@example.com"
+            - "azure-security@example.com"
 
         subscriptions:
 
@@ -111,7 +111,7 @@ management_groups:
 
             iam:
               "Key Vault Administrator":
-                - "group:azure-devops@example.com"
+                - "azure-devops@example.com"
 
 
       # ------------------------------------------------------
@@ -131,7 +131,7 @@ management_groups:
 
         iam:
           "Network Contributor":
-            - "group:azure-network-team@example.com"
+            - "azure-network-team@example.com"
 
         subscriptions: []
 
@@ -190,7 +190,7 @@ management_groups:
 
         iam:
           "Reader":
-            - "group:azure-security@example.com"
+            - "azure-security@example.com"
 
         subscriptions: []
 
@@ -240,7 +240,7 @@ management_groups:
 
                         iam:
                           "Contributor":
-                            - "group:payment-admins@example.com"
+                            - "payment-admins@example.com"
 
                         resources:
 

@@ -1,9 +1,6 @@
-variable "policies" {
-  description = "Flat map of built-in policy assignments, keyed by scope_name-name (from yaml-processing's builtin_policies output)"
-  type        = any
-}
-
-variable "scope_ids" {
-  description = "Map of scope_name (tenant-root or a management group's name) -> Azure resource ID"
-  type        = map(string)
+variable "yaml_file" {
+  description = "Optional path to the landing-zone YAML configuration. When null, uses yaml-processing/config/azure.yaml."
+  type        = string
+  default     = null
+  nullable    = true
 }
