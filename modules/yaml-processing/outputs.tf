@@ -13,11 +13,6 @@ output "resource_groups" {
   value       = local.resource_groups_map
 }
 
-output "resources" {
-  description = "Flattened resources with subscription and resource group relationships"
-  value       = local.resources_map
-}
-
 output "budgets" {
   description = "Flattened budget instances with subscription scope and notification recipients"
   value       = local.budgets_map

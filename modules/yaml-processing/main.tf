@@ -177,25 +177,6 @@ locals {
 
 
   # ----------------------------------------------------------
-  # Resources
-  # ----------------------------------------------------------
-
-  resources = flatten([
-    for sub in local.subscriptions : [
-      for rg in try(sub.resource_groups, []) : [
-        for resource in try(rg.resources, []) : merge(
-          resource,
-          {
-            subscription   = sub.name
-            resource_group = rg.name
-            location       = rg.location
-          }
-        )
-      ]
-    ]
-  ])
-
-  # ----------------------------------------------------------
   # Policies (tenant-level + every management group level)
   #
   # Built-in policies live in the main YAML (azure.yaml).
@@ -333,11 +314,6 @@ locals {
     "${rg.subscription}/${rg.name}" => rg
   }
 
-  resources_map = {
-    for resource in local.resources :
-    "${resource.subscription}/${resource.resource_group}/${resource.type}/${resource.name}" => resource
-  }
-
   # ----------------------------------------------------------
   # Budgets
   #
@@ -395,7 +371,6 @@ resource "null_resource" "yaml_flatten" {
         management_groups = local.management_groups
         subscriptions     = local.subscriptions
         resource_groups   = local.resource_groups
-        resources         = local.resources
         policies          = local.all_policies
       })
     )
