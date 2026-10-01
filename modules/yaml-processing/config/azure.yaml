@@ -13,21 +13,23 @@ tenant:
       amount: 500
       currency: "USD"
       time_grain: "Monthly"
+      start_date: "2026-10-01T00:00:00Z"
       thresholds: [50, 70, 90, 100]
       notifications:
         - type: "Email"
           recipients:
-            - "azure-security-alerts@example.com"
+            - "sujalparashar700@gmail.com"
 
     platform-budget:
       amount: 2500
       currency: "USD"
       time_grain: "Monthly"
+      start_date: "2026-10-01T00:00:00Z"
       thresholds: [80, 100]
       notifications:
         - type: "Email"
           recipients:
-            - "azure-ops-alerts@example.com"
+            - "sujalparashar700@gmail.com"
 
 
 # --- IAM user directory object IDs ---
@@ -98,8 +100,9 @@ management_groups:
             display_name: "Shared Operations"
             billing_scope_id: /providers/Microsoft.Billing/billingAccounts/e1ea7498-fcb8-5fa0-d431-658e1435a459:379eacb6-0df7-4782-bc03-70d367419cbc_2019-05-31/billingProfiles/EQDC-YZLS-BG7-PGB/invoiceSections/cd11e743-b512-4dc5-a954-d56353d804da
 
-            billing_budget:
-              reference: "security-budget"
+            budget_references:
+              - "security-budget"
+              - "platform-budget"
 
             resource_groups:
 
@@ -238,8 +241,8 @@ management_groups:
                     display_name: "Production Payment Workload"
                     billing_scope_id: /providers/Microsoft.Billing/billingAccounts/e1ea7498-fcb8-5fa0-d431-658e1435a459:379eacb6-0df7-4782-bc03-70d367419cbc_2019-05-31/billingProfiles/EQDC-YZLS-BG7-PGB/invoiceSections/cd11e743-b512-4dc5-a954-d56353d804da
 
-                    billing_budget:
-                      reference: "security-budget"
+                    budget_references:
+                      - "security-budget"
 
                     resource_groups:
 

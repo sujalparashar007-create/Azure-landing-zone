@@ -18,6 +18,11 @@ output "resources" {
   value       = local.resources_map
 }
 
+output "budgets" {
+  description = "Flattened budget instances with subscription scope and notification recipients"
+  value       = local.budgets_map
+}
+
 output "iam_assignments" {
   description = "Flattened IAM assignments with tenant, management group, subscription, and resource group scopes"
   value       = local.iam_assignments_map

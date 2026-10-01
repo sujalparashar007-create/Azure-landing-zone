@@ -337,6 +337,43 @@ locals {
     for resource in local.resources :
     "${resource.subscription}/${resource.resource_group}/${resource.type}/${resource.name}" => resource
   }
+
+  # ----------------------------------------------------------
+  # Budgets
+  #
+  # Budget definitions live under tenant.budgets; subscriptions
+  # reference them by name via budget_references. Flatten each
+  # reference into a standalone budget instance.
+  # ----------------------------------------------------------
+
+  budget_definitions = {
+    for name, b in try(local.landing_zone.tenant.budgets, {}) :
+    name => merge(
+      b,
+      {
+        contact_emails = flatten([
+          for n in try(b.notifications, []) : n.recipients
+        ])
+      }
+    )
+  }
+
+  budgets = flatten([
+    for sub in local.subscriptions : [
+      for ref in try(sub.budget_references, []) : merge(
+        local.budget_definitions[ref],
+        {
+          budget_name  = ref
+          subscription = sub.name
+        }
+      )
+    ]
+  ])
+
+  budgets_map = {
+    for b in local.budgets :
+    "${b.subscription}/${b.budget_name}" => b
+  }
 }
 
 
