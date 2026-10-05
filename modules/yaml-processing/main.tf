@@ -350,8 +350,74 @@ locals {
     for b in local.budgets :
     "${b.subscription}/${b.budget_name}" => b
   }
+
+
+  # ----------------------------------------------------------
+  # Network YAML (incremental processing)
+  #
+  # network.yaml is consumed phase-by-phase. Phase 1 flattens
+  # ONLY the Virtual Network data (hub + spokes). Subnets and
+  # all other network resources are handled by later phases.
+  #
+  # Subscriptions and resource groups that already exist in the
+  # ALZ (defined in azure.yaml) are referenced by logical key
+  # (subscription_ref / resource_group_ref) and resolved here
+  # against the flattened azure.yaml data.
+  # ----------------------------------------------------------
+
+  network_config = yamldecode(file(var.network_yaml_file))
+
+  subscription_refs   = try(local.network_config.references.subscriptions, {})
+  resource_group_refs = try(local.network_config.references.resource_groups, {})
+
+  hub_vnet = {
+    name           = local.network_config.network.hub.vnet
+    location       = local.network_config.network.hub.location
+    address_space  = local.network_config.network.hub.address_space
+    subscription   = try(local.subscription_refs[local.network_config.network.hub.subscription_ref], null)
+    resource_group = try(local.resource_group_refs[local.network_config.network.hub.resource_group_ref], null)
+    subscription_display_name = try(
+      local.subscriptions_map[local.subscription_refs[local.network_config.network.hub.subscription_ref]].display_name,
+      null
+    )
+  }
+
+  spoke_vnets = {
+    for sp in try(local.network_config.network.spokes, []) :
+    sp.name => {
+      name           = sp.name
+      location       = sp.location
+      address_space  = sp.address_space
+      subscription   = try(local.subscription_refs[sp.subscription_ref], null)
+      resource_group = try(local.resource_group_refs[sp.resource_group_ref], null)
+      subscription_display_name = try(
+        local.subscriptions_map[local.subscription_refs[sp.subscription_ref]].display_name,
+        null
+      )
+    }
+  }
+
+  vnets = merge({ (local.hub_vnet.name) = local.hub_vnet }, local.spoke_vnets)
 }
 
+
+# ----------------------------------------------------------
+# Validate network.yaml references resolve to existing ALZ
+# subscriptions and resource groups.
+# ----------------------------------------------------------
+
+check "network_references_resolve" {
+  assert {
+    condition = alltrue([
+      for key, vnet in local.vnets :
+      vnet.subscription != null &&
+      vnet.resource_group != null &&
+      vnet.subscription_display_name != null &&
+      contains(keys(local.resource_groups_map), "${vnet.subscription}/${vnet.resource_group}")
+    ])
+    error_message = "Every network resource must reference a subscription and resource group that exist in azure.yaml, and the resource group must belong to the referenced subscription."
+  }
+}
 
 # ----------------------------------------------------------
 # Required null_resource
@@ -364,7 +430,8 @@ locals {
 
 resource "null_resource" "yaml_flatten" {
   triggers = {
-    yaml_file_hash = filesha256(var.yaml_file)
+    yaml_file_hash         = filesha256(var.yaml_file)
+    network_yaml_file_hash = filesha256(var.network_yaml_file)
 
     flattened_configuration_hash = sha256(
       jsonencode({

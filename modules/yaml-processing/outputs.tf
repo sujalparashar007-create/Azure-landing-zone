@@ -52,3 +52,8 @@ output "tenant_id" {
   description = "Tenant ID, read once here so the YAML is not decoded in more than one place"
   value       = local.landing_zone.tenant.id
 }
+
+output "vnets" {
+  description = "Flattened Virtual Networks (hub + spokes) from network.yaml"
+  value       = local.vnets
+}

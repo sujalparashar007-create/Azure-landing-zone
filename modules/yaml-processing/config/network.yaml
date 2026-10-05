@@ -60,11 +60,24 @@ features:
   flow_logs: true
   route_server: false
 
+# Maps stable logical keys to the existing ALZ subscriptions and resource
+# groups defined in azure.yaml. Network resources reference these keys via
+# subscription_ref / resource_group_ref; yaml-processing resolves them.
+references:
+  subscriptions:
+    network: "sub-prod-network"
+    shared_services: "sub-shared-ops"
+    payments: "sub-prod-payment"
+  resource_groups:
+    network: "rg-prod-network"
+    shared_services: "rg-shared-ops"
+    payments: "rg-prod-payment-app"
+
 network:
   hub:
     vnet: "vnet-prod-hub"          # owned by network.yaml
-    subscription: "sub-prod-network"
-    resource_group: "rg-prod-network"
+    subscription_ref: "network"
+    resource_group_ref: "network"
     location: "eastus"
     address_space:
       - "10.0.0.0/16"
@@ -99,8 +112,8 @@ network:
   spokes:
     - name: "vnet-spoke-shared"
       display_name: "Shared Services Spoke"
-      subscription: "sub-shared-ops"
-      resource_group: "rg-shared-ops"
+      subscription_ref: "shared_services"
+      resource_group_ref: "shared_services"
       location: "eastus"
       address_space:
         - "10.1.0.0/16"
@@ -117,8 +130,8 @@ network:
 
     - name: "vnet-spoke-payments"
       display_name: "Payments Spoke (PCI)"
-      subscription: "sub-prod-payment"
-      resource_group: "rg-prod-payment-app"
+      subscription_ref: "payments"
+      resource_group_ref: "payments"
       location: "eastus"
       address_space:
         - "10.2.0.0/16"

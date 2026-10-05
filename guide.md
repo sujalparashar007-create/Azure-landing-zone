@@ -1,32 +1,125 @@
-Work only on modules/yaml-processing/config/network.yaml. No .tf edits, no commits, no apply/destroy. Do NOT delete network.yaml.bak. Re-run git status first and show it.
+Implement the approved reference design for the existing network.yaml P1 VNet implementation.
 
-PART 1 - FIXES (do these before validating)
+IMPORTANT ARCHITECTURE REQUIREMENT:
 
-F1. NSG address fields: make every NSG rule use list form. Convert source_address_prefix -> source_address_prefixes: [..] and destination_address_prefix -> destination_address_prefixes: [..] on ALL rules in security.network_security_groups (values like "*", "Internet", "10.0.2.0/26" stay as list items). Keep destination_port_ranges and source_port_range as they are. Add a comment at the top of the security section stating the list-form convention.
+The project flow and working flow must remain exactly the same as the existing Azure Landing Zone implementation:
 
-F2. Single source of truth for subnet links: subnets already declare nsg / nat_gateway / route_table. Remove the back-reference `subnet:` field from every entry in security.network_security_groups and from every entry in nat. First verify that each NSG and the NAT gateway is referenced by exactly one subnet (nsg-prod -> snet-hub-shared, nsg-spoke-shared-app, nsg-spoke-shared-data, nsg-spoke-payments-app, nsg-spoke-payments-data; nat-gw-hub -> snet-hub-shared). Report any NSG/NAT that no subnet references or that two subnets reference, and ask me before changing those. Also remove the `nsg: "nsg-prod"` field from the VM (the NSG is attached at subnet level) and keep a comment.
+azure.yaml / custom-policy.yaml / network.yaml
+        ↓
+modules/yaml-processing
+        ↓
+YAML decode + flattening
+        ↓
+module outputs
+        ↓
+individual Terraform modules
+        ↓
+Azure resources
 
-F3. Network Watcher: add `existing: true` to every network_watcher entry with the comment "Azure auto-creates NetworkWatcher_<region> in NetworkWatcherRG per subscription; reference it, do not create it".
+Do NOT introduce a new architecture, wrapper module, or separate processing flow.
 
-F4. Flow logs storage: check current Microsoft docs on whether a Network Watcher VNet flow log can write to a storage account in a DIFFERENT subscription than the VNet (same tenant, same region). Report what you find with the doc source. If cross-subscription is supported, add a comment saying so. If it is NOT supported or unclear, add per-subscription flow log storage accounts: stflowspoke1 style names are not allowed, so use stnetlogsshared (sub-shared-ops / rg-shared-ops) and stnetlogspay (sub-prod-payment / rg-prod-payment-app), same settings as stnetlogshub, and point each spoke flow log at its own subscription's account. Storage names must be 3-24 chars, lowercase letters and digits only.
+REFERENCE REQUIREMENT:
 
-F5. Add a comment block under `features:` listing dependencies, e.g. firewall=false breaks spoke default routes (10.0.1.4); vpn_gateway=false makes peering use_remote_gateways invalid; dns_resolver=false disables the forwarding ruleset; private_endpoint=false makes stappdatahub unreachable; flow_logs requires network_watcher. Comments only, no logic.
+network.yaml consumes some resources that already exist in the previous ALZ deployment and are already defined in azure.yaml.
 
-PART 2 - SYNTAX AND VALUE VALIDATION (script lives in %TEMP%, not in the repo)
+For these existing resources only:
+- subscriptions
+- resource groups
 
-V1. Strict YAML parse that FAILS on duplicate keys (plain yaml.safe_load silently overwrites duplicates, so use a custom loader or yamllint with key-duplicates). Also check: no tabs, consistent 2-space indentation, no stray non-YAML text, no unquoted values that YAML would convert to booleans or numbers by mistake (yes/no/on/off, versions, "*" must be quoted).
-V2. Parse with Terraform's own yamldecode: create a temp folder in %TEMP% with an empty main.tf and run  echo 'yamldecode(file("<absolute path to network.yaml>"))' | terraform console  and confirm it prints without error.
-V3. Network value checks with python ipaddress:
-  - all CIDRs valid; hub and spoke VNet address spaces do not overlap each other or 192.168.0.0/16
-  - every subnet sits inside its VNet address space; no two subnets in the same VNet overlap
-  - minimum sizes: GatewaySubnet >= /27, AzureFirewallSubnet >= /26, AzureBastionSubnet >= /26, RouteServerSubnet >= /27, resolver subnets >= /28 and delegated to Microsoft.Network/dnsResolvers
-  - firewall private_ip (10.0.1.4) lies inside AzureFirewallSubnet and equals the next hop in all route-table firewall routes
-  - NSG rule priorities are unique per NSG and within 100-4096; priorities unique per firewall collection group
-  - VPN gateway bgp_asn is not 65515; sku ends in AZ; pips used by AZ resources have zones
-  - every public IP is referenced exactly once (firewall, vpn, bastion, nat, route server)
-  - storage names: 3-24 chars, lowercase letters and digits only, unique across the file
-  - every resource that needs subscription/resource_group has them explicitly or inherits from defaults
-V4. Re-run the reference-integrity check from before and print the full table again (reference | where used | resolved? | where defined). Unresolved count must be 0.
+network.yaml must use references instead of repeating their names throughout the network resource definitions.
 
-PART 3 - REPORT
-Give me: (1) a table F1..F5 -> what changed, (2) results of V1..V4 with PASS/FAIL per check, (3) every issue found by V3 that you fixed, and anything you did NOT fix and why, (4) the git diff against network.yaml.bak, (5) the F4 doc source and conclusion. Stop and ask me before making any change that is not described in this prompt.
+Use the approved references approach:
+
+references:
+  subscriptions:
+    network: "sub-prod-network"
+    shared_services: "sub-shared-ops"
+    payments: "sub-prod-payment"
+
+  resource_groups:
+    network: "rg-prod-network"
+    shared_services: "rg-shared-ops"
+    payments: "rg-prod-payment-app"
+
+Then network resources must use:
+- subscription_ref
+- resource_group_ref
+
+instead of directly repeating the existing subscription/resource-group names.
+
+IMPORTANT:
+The references block is only a mapping for existing ALZ resources. Do not redesign the rest of network.yaml.
+
+NEW NETWORK RESOURCE CONFIGURATION:
+
+All configuration belonging to resources that network.yaml is creating must remain in network.yaml exactly as the existing design intends.
+
+Do not move network.yaml configuration into Terraform modules.
+Do not hard-code network.yaml values inside Terraform modules.
+Do not duplicate network.yaml values inside Terraform modules.
+
+The modules must continue consuming only the flattened outputs from modules/yaml-processing, exactly like the existing azure.yaml/custom-policy.yaml flow.
+
+YAML-PROCESSING:
+
+1. Extend the existing network.yaml processing in modules/yaml-processing.
+2. Resolve subscription_ref against the existing flattened azure.yaml subscription data.
+3. Resolve resource_group_ref against the existing flattened azure.yaml resource-group data.
+4. Validate that:
+   - the reference exists
+   - the referenced subscription exists
+   - the referenced resource group exists
+   - the resource group belongs to the referenced subscription
+5. Inject the resolved values into the flattened network data.
+6. Expose the resolved network data through the existing yaml-processing outputs.
+7. Preserve the existing azure.yaml and custom-policy.yaml processing unchanged.
+8. Do not create a second YAML parser or separate processing mechanism.
+
+VNET MODULE:
+
+Update modules/vnet so that it consumes the resolved flattened VNet data from yaml-processing.
+
+The VNet module must NOT contain hard-coded:
+- subscription names
+- resource-group names
+- VNet names
+- locations
+- address spaces
+- or any other network.yaml configuration values.
+
+It must use only the values received from yaml-processing.
+
+Remove the current independent subscription/resource-group discovery where it duplicates the reference resolution already performed by yaml-processing.
+
+If Azure subscription GUID resolution is technically required because yaml-processing has no Azure provider, keep only the minimum provider-side lookup necessary to translate the already-resolved subscription value into its Azure ID. Do not recreate the reference-resolution logic inside modules/vnet.
+
+SCOPE:
+
+- This change is only for the approved P1 VNet implementation and the reusable subscription/resource-group reference mechanism.
+- Do not implement subnets or any other network resource.
+- Do not modify unrelated ALZ modules.
+- Do not create duplicate resources.
+- Do not apply Terraform.
+
+VALIDATION:
+
+After implementation run:
+
+terraform fmt
+terraform validate
+terraform plan
+
+Do not run terraform apply.
+
+Before finishing, report:
+1. Exact files changed.
+2. Final network.yaml reference structure.
+3. How subscription_ref and resource_group_ref are resolved.
+4. What flattened data is exposed to modules/vnet.
+5. Confirmation that no network.yaml configuration is hard-coded inside modules/vnet.
+6. Terraform fmt result.
+7. Terraform validate result.
+8. Terraform plan result.
+9. Confirm that no apply was performed.
+
+Preserve the existing project conventions and implementation pattern wherever possible. Make the minimum changes required to implement this reference mechanism correctly.
