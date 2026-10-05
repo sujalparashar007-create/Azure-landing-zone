@@ -109,17 +109,6 @@ management_groups:
               - name: "rg-shared-ops"
                 location: "eastus"
 
-                resources:
-
-                  - type: "Microsoft.KeyVault/vaults"
-                    name: "kv-shared-secrets"
-
-                  - type: "Microsoft.KeyVault/vaults/keys"
-                    name: "platform-key"
-
-                  - type: "Microsoft.OperationalInsights/workspaces"
-                    name: "law-shared-ops"
-
             iam:
               "Key Vault Administrator":
                 - "sujalparashar700@gmail.com"
@@ -167,21 +156,6 @@ management_groups:
 
                   - name: "rg-prod-network"
                     location: "eastus"
-
-                    resources:
-
-                      - type: "Microsoft.Network/virtualNetworks"
-                        name: "vnet-prod-hub"
-
-                      - type: "Microsoft.Network/networkSecurityGroups"
-                        name: "nsg-prod"
-
-                      - type: "Microsoft.Network/azureFirewalls"
-                        name: "afw-prod"
-
-                      - type: "Microsoft.Network/virtualNetworkGateways"
-                        name: "vng-prod"
-
 
       # ------------------------------------------------------
       # LEVEL 2 - Production
@@ -252,17 +226,3 @@ management_groups:
                         iam:
                           "Contributor":
                             - "sujalparashar700@gmail.com"
-
-                        resources:
-
-                          - type: "Microsoft.Web/sites"
-                            name: "payment-api"
-
-                          - type: "Microsoft.ContainerService/managedClusters"
-                            name: "aks-payment"
-
-                          - type: "Microsoft.KeyVault/vaults"
-                            name: "kv-payment"
-
-                          - type: "Microsoft.Storage/storageAccounts"
-                            name: "stpaymentprod"
