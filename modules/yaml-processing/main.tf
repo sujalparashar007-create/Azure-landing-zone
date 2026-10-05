@@ -380,6 +380,7 @@ locals {
       local.subscriptions_map[local.subscription_refs[local.network_config.network.hub.subscription_ref]].display_name,
       null
     )
+    subnets = local.network_config.network.hub.subnets
   }
 
   spoke_vnets = {
@@ -394,10 +395,35 @@ locals {
         local.subscriptions_map[local.subscription_refs[sp.subscription_ref]].display_name,
         null
       )
+      subnets = sp.subnets
     }
   }
 
   vnets = merge({ (local.hub_vnet.name) = local.hub_vnet }, local.spoke_vnets)
+
+  # Flatten every subnet (hub + spokes) into a single map keyed by
+  # "vnet/subnet". Each entry inherits the resolved subscription and resource
+  # group of its parent VNet. route_table / nsg / nat_gateway are carried as
+  # metadata for later phases (they are NOT applied by the subnet module).
+  subnets = merge([
+    for vnet_key, vnet in local.vnets :
+    {
+      for s in try(vnet.subnets, []) :
+      "${vnet.name}/${s.name}" => {
+        name                              = s.name
+        vnet_name                         = vnet.name
+        address_prefix                    = s.address_prefix
+        subscription                      = vnet.subscription
+        resource_group                    = vnet.resource_group
+        subscription_display_name         = vnet.subscription_display_name
+        route_table                       = try(s.route_table, null)
+        nsg                               = try(s.nsg, null)
+        nat_gateway                       = try(s.nat_gateway, null)
+        delegation                        = try(s.delegation, null)
+        private_endpoint_network_policies = try(s.private_endpoint_network_policies, null)
+      }
+    }
+  ]...)
 }
 
 

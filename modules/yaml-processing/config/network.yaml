@@ -25,8 +25,9 @@
 
 defaults:
   location: "eastus"
-  subscription: "sub-prod-network"
-  resource_group: "rg-prod-network"
+  # subscription / resource_group are NOT defaulted here: network resources
+  # reference existing ALZ subscriptions/resource groups by logical key via
+  # the `references` block (subscription_ref / resource_group_ref).
   tags:
     Environment: "prod"
     Project: "landing-zone"

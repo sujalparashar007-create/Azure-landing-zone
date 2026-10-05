@@ -57,3 +57,8 @@ output "vnets" {
   description = "Flattened Virtual Networks (hub + spokes) from network.yaml"
   value       = local.vnets
 }
+
+output "subnets" {
+  description = "Flattened subnets (hub + spokes) from network.yaml, keyed by vnet/subnet"
+  value       = local.subnets
+}
