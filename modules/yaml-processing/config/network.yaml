@@ -319,8 +319,8 @@ routing:
 security:
   network_security_groups:
     - name: "nsg-prod"              # owned by network.yaml
-      subscription: "sub-prod-network"
-      resource_group: "rg-prod-network"
+      subscription_ref: "network"
+      resource_group_ref: "network"
       location: "eastus"
       rules:
         - name: "allow-bastion-inbound"
@@ -352,8 +352,8 @@ security:
           destination_port_ranges: ["*"]
 
     - name: "nsg-spoke-shared-app"
-      subscription: "sub-shared-ops"
-      resource_group: "rg-shared-ops"
+      subscription_ref: "shared_services"
+      resource_group_ref: "shared_services"
       location: "eastus"
       rules:
         - name: "allow-hub-inbound"
@@ -376,8 +376,8 @@ security:
           destination_port_ranges: ["*"]
 
     - name: "nsg-spoke-shared-data"
-      subscription: "sub-shared-ops"
-      resource_group: "rg-shared-ops"
+      subscription_ref: "shared_services"
+      resource_group_ref: "shared_services"
       location: "eastus"
       rules:
         - name: "allow-app-subnet-inbound"
@@ -409,8 +409,8 @@ security:
           destination_port_ranges: ["*"]
 
     - name: "nsg-spoke-payments-app"
-      subscription: "sub-prod-payment"
-      resource_group: "rg-prod-payment-app"
+      subscription_ref: "payments"
+      resource_group_ref: "payments"
       location: "eastus"
       rules:
         - name: "allow-hub-inbound"
@@ -433,8 +433,8 @@ security:
           destination_port_ranges: ["*"]
 
     - name: "nsg-spoke-payments-data"
-      subscription: "sub-prod-payment"
-      resource_group: "rg-prod-payment-app"
+      subscription_ref: "payments"
+      resource_group_ref: "payments"
       location: "eastus"
       rules:
         - name: "allow-app-subnet-inbound"

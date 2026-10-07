@@ -62,3 +62,13 @@ output "subnets" {
   description = "Flattened subnets (hub + spokes) from network.yaml, keyed by vnet/subnet"
   value       = local.subnets
 }
+
+output "nsgs" {
+  description = "Flattened network security groups from network.yaml"
+  value       = local.nsgs
+}
+
+output "nsg_rules" {
+  description = "Flattened NSG security rules from network.yaml, keyed by nsg/rule"
+  value       = local.nsg_rules
+}

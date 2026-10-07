@@ -1,60 +1,33 @@
-Perform a READ-ONLY final audit of the P2 Subnet implementation.
+Fix the remaining P3 NSG rule API errors only.
 
-Do NOT modify files or Terraform state.
-Do NOT run apply/destroy/import.
+Current issue:
+- 9 of 12 NSG rules are already created.
+- Only these 3 rules fail:
+  - nsg-prod/deny-internet-inbound
+  - nsg-spoke-shared-app/deny-internet-inbound
+  - nsg-spoke-payments-app/deny-internet-inbound
+- Current payload uses:
+  sourceAddressPrefixes = ["Internet"]
+- Azure still rejects "Internet" with:
+  SecurityRuleParameterContainsUnsupportedValue.
 
-Check:
+Required:
+1. Inspect the current NSG rule payload and Azure API requirements.
+2. Correctly represent the "Internet" service tag for these rules.
+3. Keep ["*"] wildcard mapping correct.
+4. Keep CIDR/source-prefix lists correct.
+5. Do not change network.yaml or security semantics.
+6. Do not modify the 9 successful rules or existing NSGs.
+7. Preserve:
+   parent_id = azapi_resource.nsg[each.value.nsg_name].id
+8. Change only the minimum required code.
+9. Run terraform fmt, terraform validate and terraform plan only.
+10. DO NOT run terraform apply.
 
-1. P1 regression
-- Confirm the P1 VNet implementation is unchanged functionally.
-- Confirm adding `subnets` to flattened VNet data does not alter VNet resource behavior.
-- Confirm P1 remains stable.
+Expected:
+- Only the 3 failed rules planned for creation.
+- 3 to add, 0 to change, 0 to destroy.
+- No NSG recreation.
+- No changes to the 9 successful rules.
 
-2. network.yaml
-- Subnet syntax/structure is valid.
-- All 11 intended subnets are present.
-- VNet relationships are correct.
-- No duplicated existing subscription/RG values were reintroduced.
-- `defaults` warning is fully resolved.
-
-3. yaml-processing
-- Subnets are loaded from network.yaml.
-- Parent VNet references are resolved through existing P1 logic.
-- Subscription/RG values are inherited from resolved VNet data.
-- Flattened subnet output contains everything required by modules/subnet.
-- No stale or broken references.
-
-4. modules/subnet
-- Consumes only yaml-processing output.
-- No hard-coded subnet/VNet/RG/subscription/CIDR values.
-- parent_id is constructed correctly.
-- Address prefixes and supported subnet properties are mapped correctly.
-- Outputs are correct.
-
-5. End-to-end flow
-Verify:
-network.yaml → yaml-processing → flattened subnets → modules/subnet → Azure Subnets
-
-6. Terraform validation
-Run:
-- terraform fmt -check -recursive
-- terraform validate
-- terraform plan
-
-Do NOT apply.
-
-Expected P2 plan:
-11 subnets + yaml flatten resource, with 0 change / 0 destroy.
-
-Also verify that the plan does NOT propose changes to the already-applied 3 VNets.
-
-Final response:
-- PASS / FAIL / WARNING
-- P1 regression status
-- P2 status
-- stale/broken references
-- hard-coded/duplicated configuration
-- plan result
-- final verdict
-
-Do not fix anything during this audit.
+Return the exact fix, files changed, validation result and plan result.

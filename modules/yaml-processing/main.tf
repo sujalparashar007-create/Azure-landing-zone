@@ -424,6 +424,44 @@ locals {
       }
     }
   ]...)
+
+  # Flatten every Network Security Group (P3) and its security rules. Each
+  # NSG resolves its subscription/resource group via the same references
+  # mechanism; rules inherit the parent NSG's subscription/resource group.
+  nsgs = {
+    for nsg in try(local.network_config.security.network_security_groups, []) :
+    nsg.name => {
+      name           = nsg.name
+      location       = nsg.location
+      subscription   = try(local.subscription_refs[nsg.subscription_ref], null)
+      resource_group = try(local.resource_group_refs[nsg.resource_group_ref], null)
+      subscription_display_name = try(
+        local.subscriptions_map[local.subscription_refs[nsg.subscription_ref]].display_name,
+        null
+      )
+      rules = try(nsg.rules, [])
+    }
+  }
+
+  nsg_rules = merge([
+    for nsg_key, nsg in local.nsgs :
+    {
+      for r in try(nsg.rules, []) :
+      "${nsg.name}/${r.name}" => {
+        name                         = r.name
+        nsg_name                     = nsg.name
+        resource_group               = nsg.resource_group
+        priority                     = r.priority
+        direction                    = r.direction
+        access                       = r.access
+        protocol                     = r.protocol
+        source_address_prefixes      = r.source_address_prefixes
+        source_port_range            = r.source_port_range
+        destination_address_prefixes = r.destination_address_prefixes
+        destination_port_ranges      = r.destination_port_ranges
+      }
+    }
+  ]...)
 }
 
 
@@ -442,6 +480,24 @@ check "network_references_resolve" {
       contains(keys(local.resource_groups_map), "${vnet.subscription}/${vnet.resource_group}")
     ])
     error_message = "Every network resource must reference a subscription and resource group that exist in azure.yaml, and the resource group must belong to the referenced subscription."
+  }
+}
+
+# ----------------------------------------------------------
+# Validate network.yaml NSG references resolve to existing
+# ALZ subscriptions and resource groups.
+# ----------------------------------------------------------
+
+check "nsg_references_resolve" {
+  assert {
+    condition = alltrue([
+      for key, nsg in local.nsgs :
+      nsg.subscription != null &&
+      nsg.resource_group != null &&
+      nsg.subscription_display_name != null &&
+      contains(keys(local.resource_groups_map), "${nsg.subscription}/${nsg.resource_group}")
+    ])
+    error_message = "Every network security group must reference a subscription and resource group that exist in azure.yaml, and the resource group must belong to the referenced subscription."
   }
 }
 
