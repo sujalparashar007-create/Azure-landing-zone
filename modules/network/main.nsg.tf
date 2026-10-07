@@ -1,17 +1,3 @@
-module "yaml_processing" {
-  source = "../yaml-processing"
-
-  yaml_file         = coalesce(var.yaml_file, "${path.module}/../yaml-processing/config/azure.yaml")
-  network_yaml_file = coalesce(var.network_yaml_file, "${path.module}/../yaml-processing/config/network.yaml")
-}
-
-# Minimal provider-side lookup: translate the already-resolved subscription
-# display_name into its Azure subscription ID. The reference resolution
-# (subscription_ref -> subscription -> display_name) is performed by the
-# yaml-processing module; this data source only maps the resolved value to
-# its Azure ID.
-data "azurerm_subscriptions" "available" {}
-
 locals {
   nsg_subscription_id = {
     for name, nsg in module.yaml_processing.nsgs :
@@ -31,15 +17,6 @@ locals {
       s.subscription_id
       if s.display_name == assoc.subscription_display_name && s.state == "Enabled"
     ])
-  }
-}
-
-check "subscriptions_resolvable" {
-  assert {
-    condition = alltrue([
-      for name, id in local.nsg_subscription_id : id != null
-    ])
-    error_message = "Unable to resolve the referenced subscription display name to an Azure subscription ID. Verify the subscriptions exist and their display names are unique."
   }
 }
 
@@ -123,6 +100,8 @@ resource "azapi_resource" "rule" {
 # the NSG (this module) and the subnet (created by the subnet module).
 resource "azapi_update_resource" "nsg_subnet_association" {
   for_each = module.yaml_processing.nsg_subnet_associations
+
+  depends_on = [azapi_resource.subnet, azapi_resource.nsg]
 
   type        = "Microsoft.Network/virtualNetworks/subnets@2024-01-01"
   resource_id = "/subscriptions/${local.subnet_subscription_id[each.key]}/resourceGroups/${each.value.resource_group}/providers/Microsoft.Network/virtualNetworks/${each.value.vnet_name}/subnets/${each.value.name}"

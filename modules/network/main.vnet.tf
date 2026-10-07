@@ -13,7 +13,7 @@ module "yaml_processing" {
 data "azurerm_subscriptions" "available" {}
 
 locals {
-  subscription_id = {
+  vnet_subscription_id = {
     for name, vnet in module.yaml_processing.vnets :
     name => one([
       for s in data.azurerm_subscriptions.available.subscriptions :
@@ -25,9 +25,11 @@ locals {
 
 check "subscriptions_resolvable" {
   assert {
-    condition = alltrue([
-      for name, id in local.subscription_id : id != null
-    ])
+    condition = alltrue(concat(
+      [for name, id in local.vnet_subscription_id : id != null],
+      [for key, id in local.subnet_module_subscription_id : id != null],
+      [for name, id in local.nsg_subscription_id : id != null]
+    ))
     error_message = "Unable to resolve the referenced subscription display name to an Azure subscription ID. Verify the subscriptions exist and their display names are unique."
   }
 }
@@ -36,12 +38,12 @@ check "subscriptions_resolvable" {
 # own subscription/resource group. azapi is used because the VNets live in
 # different subscriptions and the subscription is chosen per resource through
 # parent_id.
-resource "azapi_resource" "this" {
+resource "azapi_resource" "vnet" {
   for_each = module.yaml_processing.vnets
 
   type      = "Microsoft.Network/virtualNetworks@2024-01-01"
   name      = each.value.name
-  parent_id = "/subscriptions/${local.subscription_id[each.key]}/resourceGroups/${each.value.resource_group}"
+  parent_id = "/subscriptions/${local.vnet_subscription_id[each.key]}/resourceGroups/${each.value.resource_group}"
   location  = each.value.location
 
   body = {

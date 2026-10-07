@@ -1,0 +1,134 @@
+[0m[1mmodule.yaml_processing.null_resource.yaml_flatten: Refreshing state... [id=45197541][0m
+[0m[1mdata.azurerm_subscriptions.available: Reading...[0m[0m
+[0m[1mdata.azurerm_subscriptions.available: Read complete after 1s [id=subscriptions-59cbaf84-4354-45ff-9649-b586ddfe9335][0m
+[0m[1mazapi_resource.nsg["nsg-spoke-shared-app"]: Refreshing state... [id=/subscriptions/ad8d35e1-6b28-4d24-ad9a-a51dc655c3ad/resourceGroups/rg-shared-ops/providers/Microsoft.Network/networkSecurityGroups/nsg-spoke-shared-app][0m
+[0m[1mazapi_resource.nsg["nsg-spoke-shared-data"]: Refreshing state... [id=/subscriptions/ad8d35e1-6b28-4d24-ad9a-a51dc655c3ad/resourceGroups/rg-shared-ops/providers/Microsoft.Network/networkSecurityGroups/nsg-spoke-shared-data][0m
+[0m[1mazapi_resource.vnet["vnet-spoke-payments"]: Refreshing state... [id=/subscriptions/3fe97833-5b60-4af0-8c9a-4478460d7705/resourceGroups/rg-prod-payment-app/providers/Microsoft.Network/virtualNetworks/vnet-spoke-payments][0m
+[0m[1mazapi_resource.nsg["nsg-spoke-payments-app"]: Refreshing state... [id=/subscriptions/3fe97833-5b60-4af0-8c9a-4478460d7705/resourceGroups/rg-prod-payment-app/providers/Microsoft.Network/networkSecurityGroups/nsg-spoke-payments-app][0m
+[0m[1mazapi_resource.vnet["vnet-prod-hub"]: Refreshing state... [id=/subscriptions/8e3af5dd-dd04-45fb-9986-23ac2180a4cf/resourceGroups/rg-prod-network/providers/Microsoft.Network/virtualNetworks/vnet-prod-hub][0m
+[0m[1mazapi_resource.nsg["nsg-spoke-payments-data"]: Refreshing state... [id=/subscriptions/3fe97833-5b60-4af0-8c9a-4478460d7705/resourceGroups/rg-prod-payment-app/providers/Microsoft.Network/networkSecurityGroups/nsg-spoke-payments-data][0m
+[0m[1mazapi_resource.nsg["nsg-prod"]: Refreshing state... [id=/subscriptions/8e3af5dd-dd04-45fb-9986-23ac2180a4cf/resourceGroups/rg-prod-network/providers/Microsoft.Network/networkSecurityGroups/nsg-prod][0m
+[0m[1mazapi_resource.vnet["vnet-spoke-shared"]: Refreshing state... [id=/subscriptions/ad8d35e1-6b28-4d24-ad9a-a51dc655c3ad/resourceGroups/rg-shared-ops/providers/Microsoft.Network/virtualNetworks/vnet-spoke-shared][0m
+[0m[1mazapi_resource.subnet["vnet-spoke-payments/snet-payments-data"]: Refreshing state... [id=/subscriptions/3fe97833-5b60-4af0-8c9a-4478460d7705/resourceGroups/rg-prod-payment-app/providers/Microsoft.Network/virtualNetworks/vnet-spoke-payments/subnets/snet-payments-data][0m
+[0m[1mazapi_resource.subnet["vnet-spoke-payments/snet-payments-app"]: Refreshing state... [id=/subscriptions/3fe97833-5b60-4af0-8c9a-4478460d7705/resourceGroups/rg-prod-payment-app/providers/Microsoft.Network/virtualNetworks/vnet-spoke-payments/subnets/snet-payments-app][0m
+[0m[1mazapi_resource.subnet["vnet-spoke-shared/snet-shared-app"]: Refreshing state... [id=/subscriptions/ad8d35e1-6b28-4d24-ad9a-a51dc655c3ad/resourceGroups/rg-shared-ops/providers/Microsoft.Network/virtualNetworks/vnet-spoke-shared/subnets/snet-shared-app][0m
+[0m[1mazapi_resource.subnet["vnet-prod-hub/snet-hub-shared"]: Refreshing state... [id=/subscriptions/8e3af5dd-dd04-45fb-9986-23ac2180a4cf/resourceGroups/rg-prod-network/providers/Microsoft.Network/virtualNetworks/vnet-prod-hub/subnets/snet-hub-shared][0m
+[0m[1mazapi_resource.subnet["vnet-prod-hub/RouteServerSubnet"]: Refreshing state... [id=/subscriptions/8e3af5dd-dd04-45fb-9986-23ac2180a4cf/resourceGroups/rg-prod-network/providers/Microsoft.Network/virtualNetworks/vnet-prod-hub/subnets/RouteServerSubnet][0m
+[0m[1mazapi_resource.subnet["vnet-prod-hub/PrivateResolverInbound"]: Refreshing state... [id=/subscriptions/8e3af5dd-dd04-45fb-9986-23ac2180a4cf/resourceGroups/rg-prod-network/providers/Microsoft.Network/virtualNetworks/vnet-prod-hub/subnets/PrivateResolverInbound][0m
+[0m[1mazapi_resource.subnet["vnet-prod-hub/PrivateResolverOutbound"]: Refreshing state... [id=/subscriptions/8e3af5dd-dd04-45fb-9986-23ac2180a4cf/resourceGroups/rg-prod-network/providers/Microsoft.Network/virtualNetworks/vnet-prod-hub/subnets/PrivateResolverOutbound][0m
+[0m[1mazapi_resource.subnet["vnet-prod-hub/AzureFirewallSubnet"]: Refreshing state... [id=/subscriptions/8e3af5dd-dd04-45fb-9986-23ac2180a4cf/resourceGroups/rg-prod-network/providers/Microsoft.Network/virtualNetworks/vnet-prod-hub/subnets/AzureFirewallSubnet][0m
+[0m[1mazapi_resource.subnet["vnet-spoke-shared/snet-shared-data"]: Refreshing state... [id=/subscriptions/ad8d35e1-6b28-4d24-ad9a-a51dc655c3ad/resourceGroups/rg-shared-ops/providers/Microsoft.Network/virtualNetworks/vnet-spoke-shared/subnets/snet-shared-data][0m
+[0m[1mazapi_resource.subnet["vnet-prod-hub/AzureBastionSubnet"]: Refreshing state... [id=/subscriptions/8e3af5dd-dd04-45fb-9986-23ac2180a4cf/resourceGroups/rg-prod-network/providers/Microsoft.Network/virtualNetworks/vnet-prod-hub/subnets/AzureBastionSubnet][0m
+[0m[1mazapi_resource.subnet["vnet-prod-hub/GatewaySubnet"]: Refreshing state... [id=/subscriptions/8e3af5dd-dd04-45fb-9986-23ac2180a4cf/resourceGroups/rg-prod-network/providers/Microsoft.Network/virtualNetworks/vnet-prod-hub/subnets/GatewaySubnet][0m
+[0m[1mazapi_resource.rule["nsg-prod/deny-internet-inbound"]: Refreshing state... [id=/subscriptions/8e3af5dd-dd04-45fb-9986-23ac2180a4cf/resourceGroups/rg-prod-network/providers/Microsoft.Network/networkSecurityGroups/nsg-prod/securityRules/deny-internet-inbound][0m
+[0m[1mazapi_resource.rule["nsg-prod/allow-onprem-mgmt-inbound"]: Refreshing state... [id=/subscriptions/8e3af5dd-dd04-45fb-9986-23ac2180a4cf/resourceGroups/rg-prod-network/providers/Microsoft.Network/networkSecurityGroups/nsg-prod/securityRules/allow-onprem-mgmt-inbound][0m
+[0m[1mazapi_resource.rule["nsg-spoke-shared-data/deny-all-other-inbound"]: Refreshing state... [id=/subscriptions/ad8d35e1-6b28-4d24-ad9a-a51dc655c3ad/resourceGroups/rg-shared-ops/providers/Microsoft.Network/networkSecurityGroups/nsg-spoke-shared-data/securityRules/deny-all-other-inbound][0m
+[0m[1mazapi_resource.rule["nsg-spoke-payments-data/allow-app-subnet-inbound"]: Refreshing state... [id=/subscriptions/3fe97833-5b60-4af0-8c9a-4478460d7705/resourceGroups/rg-prod-payment-app/providers/Microsoft.Network/networkSecurityGroups/nsg-spoke-payments-data/securityRules/allow-app-subnet-inbound][0m
+[0m[1mazapi_resource.rule["nsg-spoke-payments-data/deny-all-other-inbound"]: Refreshing state... [id=/subscriptions/3fe97833-5b60-4af0-8c9a-4478460d7705/resourceGroups/rg-prod-payment-app/providers/Microsoft.Network/networkSecurityGroups/nsg-spoke-payments-data/securityRules/deny-all-other-inbound][0m
+[0m[1mazapi_resource.rule["nsg-spoke-shared-app/allow-hub-inbound"]: Refreshing state... [id=/subscriptions/ad8d35e1-6b28-4d24-ad9a-a51dc655c3ad/resourceGroups/rg-shared-ops/providers/Microsoft.Network/networkSecurityGroups/nsg-spoke-shared-app/securityRules/allow-hub-inbound][0m
+[0m[1mazapi_resource.rule["nsg-spoke-shared-data/allow-app-subnet-inbound"]: Refreshing state... [id=/subscriptions/ad8d35e1-6b28-4d24-ad9a-a51dc655c3ad/resourceGroups/rg-shared-ops/providers/Microsoft.Network/networkSecurityGroups/nsg-spoke-shared-data/securityRules/allow-app-subnet-inbound][0m
+[0m[1mazapi_resource.rule["nsg-spoke-payments-app/allow-hub-inbound"]: Refreshing state... [id=/subscriptions/3fe97833-5b60-4af0-8c9a-4478460d7705/resourceGroups/rg-prod-payment-app/providers/Microsoft.Network/networkSecurityGroups/nsg-spoke-payments-app/securityRules/allow-hub-inbound][0m
+[0m[1mazapi_resource.rule["nsg-spoke-payments-app/deny-internet-inbound"]: Refreshing state... [id=/subscriptions/3fe97833-5b60-4af0-8c9a-4478460d7705/resourceGroups/rg-prod-payment-app/providers/Microsoft.Network/networkSecurityGroups/nsg-spoke-payments-app/securityRules/deny-internet-inbound][0m
+[0m[1mazapi_resource.rule["nsg-spoke-shared-app/deny-internet-inbound"]: Refreshing state... [id=/subscriptions/ad8d35e1-6b28-4d24-ad9a-a51dc655c3ad/resourceGroups/rg-shared-ops/providers/Microsoft.Network/networkSecurityGroups/nsg-spoke-shared-app/securityRules/deny-internet-inbound][0m
+[0m[1mazapi_resource.rule["nsg-spoke-shared-data/allow-private-endpoint-inbound"]: Refreshing state... [id=/subscriptions/ad8d35e1-6b28-4d24-ad9a-a51dc655c3ad/resourceGroups/rg-shared-ops/providers/Microsoft.Network/networkSecurityGroups/nsg-spoke-shared-data/securityRules/allow-private-endpoint-inbound][0m
+[0m[1mazapi_resource.rule["nsg-prod/allow-bastion-inbound"]: Refreshing state... [id=/subscriptions/8e3af5dd-dd04-45fb-9986-23ac2180a4cf/resourceGroups/rg-prod-network/providers/Microsoft.Network/networkSecurityGroups/nsg-prod/securityRules/allow-bastion-inbound][0m
+[0m[1mazapi_update_resource.nsg_subnet_association["vnet-prod-hub/snet-hub-shared"]: Refreshing state... [id=/subscriptions/8e3af5dd-dd04-45fb-9986-23ac2180a4cf/resourceGroups/rg-prod-network/providers/Microsoft.Network/virtualNetworks/vnet-prod-hub/subnets/snet-hub-shared][0m
+[0m[1mazapi_update_resource.nsg_subnet_association["vnet-spoke-payments/snet-payments-app"]: Refreshing state... [id=/subscriptions/3fe97833-5b60-4af0-8c9a-4478460d7705/resourceGroups/rg-prod-payment-app/providers/Microsoft.Network/virtualNetworks/vnet-spoke-payments/subnets/snet-payments-app][0m
+[0m[1mazapi_update_resource.nsg_subnet_association["vnet-spoke-shared/snet-shared-app"]: Refreshing state... [id=/subscriptions/ad8d35e1-6b28-4d24-ad9a-a51dc655c3ad/resourceGroups/rg-shared-ops/providers/Microsoft.Network/virtualNetworks/vnet-spoke-shared/subnets/snet-shared-app][0m
+[0m[1mazapi_update_resource.nsg_subnet_association["vnet-spoke-shared/snet-shared-data"]: Refreshing state... [id=/subscriptions/ad8d35e1-6b28-4d24-ad9a-a51dc655c3ad/resourceGroups/rg-shared-ops/providers/Microsoft.Network/virtualNetworks/vnet-spoke-shared/subnets/snet-shared-data][0m
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  [32m+[0m create[0m
+
+Terraform will perform the following actions:
+
+[1m  # azapi_update_resource.nsg_subnet_association["vnet-spoke-payments/snet-payments-data"][0m will be created
+[0m  [32m+[0m[0m resource "azapi_update_resource" "nsg_subnet_association" {
+      [32m+[0m[0m body                    = {
+          [32m+[0m[0m properties = {
+              [32m+[0m[0m networkSecurityGroup = {
+                  [32m+[0m[0m id = "/subscriptions/3fe97833-5b60-4af0-8c9a-4478460d7705/resourceGroups/rg-prod-payment-app/providers/Microsoft.Network/networkSecurityGroups/nsg-spoke-payments-data"
+                }
+            }
+        }
+      [32m+[0m[0m id                      = (known after apply)
+      [32m+[0m[0m ignore_casing           = false
+      [32m+[0m[0m ignore_missing_property = true
+      [32m+[0m[0m name                    = (known after apply)
+      [32m+[0m[0m output                  = (known after apply)
+      [32m+[0m[0m parent_id               = (known after apply)
+      [32m+[0m[0m resource_id             = "/subscriptions/3fe97833-5b60-4af0-8c9a-4478460d7705/resourceGroups/rg-prod-payment-app/providers/Microsoft.Network/virtualNetworks/vnet-spoke-payments/subnets/snet-payments-data"
+      [32m+[0m[0m sensitive_body          = (write-only attribute)
+      [32m+[0m[0m type                    = "Microsoft.Network/virtualNetworks/subnets@2024-01-01"
+    }
+
+[1mPlan:[0m [0m1 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  [32m+[0m[0m nsg_subnet_association_ids = {
+      [32m+[0m[0m "vnet-prod-hub/snet-hub-shared"          = "/subscriptions/8e3af5dd-dd04-45fb-9986-23ac2180a4cf/resourceGroups/rg-prod-network/providers/Microsoft.Network/virtualNetworks/vnet-prod-hub/subnets/snet-hub-shared"
+      [32m+[0m[0m "vnet-spoke-payments/snet-payments-app"  = "/subscriptions/3fe97833-5b60-4af0-8c9a-4478460d7705/resourceGroups/rg-prod-payment-app/providers/Microsoft.Network/virtualNetworks/vnet-spoke-payments/subnets/snet-payments-app"
+      [32m+[0m[0m "vnet-spoke-payments/snet-payments-data" = (known after apply)
+      [32m+[0m[0m "vnet-spoke-shared/snet-shared-app"      = "/subscriptions/ad8d35e1-6b28-4d24-ad9a-a51dc655c3ad/resourceGroups/rg-shared-ops/providers/Microsoft.Network/virtualNetworks/vnet-spoke-shared/subnets/snet-shared-app"
+      [32m+[0m[0m "vnet-spoke-shared/snet-shared-data"     = "/subscriptions/ad8d35e1-6b28-4d24-ad9a-a51dc655c3ad/resourceGroups/rg-shared-ops/providers/Microsoft.Network/virtualNetworks/vnet-spoke-shared/subnets/snet-shared-data"
+    }
+[0m[1m
+Do you want to perform these actions?[0m
+  Terraform will perform the actions described above.
+  Only 'yes' will be accepted to approve.
+
+  [1mEnter a value:[0m [0m
+[0m[1mazapi_update_resource.nsg_subnet_association["vnet-spoke-payments/snet-payments-data"]: Creating...[0m[0m
+[0m[1mazapi_update_resource.nsg_subnet_association["vnet-spoke-payments/snet-payments-data"]: Creation complete after 9s [id=/subscriptions/3fe97833-5b60-4af0-8c9a-4478460d7705/resourceGroups/rg-prod-payment-app/providers/Microsoft.Network/virtualNetworks/vnet-spoke-payments/subnets/snet-payments-data][0m
+[0m[1m[32m
+Apply complete! Resources: 1 added, 0 changed, 0 destroyed.[0m
+[0m[1m[32m
+Outputs:
+
+[0mnsg_ids = {
+  "nsg-prod" = "/subscriptions/8e3af5dd-dd04-45fb-9986-23ac2180a4cf/resourceGroups/rg-prod-network/providers/Microsoft.Network/networkSecurityGroups/nsg-prod"
+  "nsg-spoke-payments-app" = "/subscriptions/3fe97833-5b60-4af0-8c9a-4478460d7705/resourceGroups/rg-prod-payment-app/providers/Microsoft.Network/networkSecurityGroups/nsg-spoke-payments-app"
+  "nsg-spoke-payments-data" = "/subscriptions/3fe97833-5b60-4af0-8c9a-4478460d7705/resourceGroups/rg-prod-payment-app/providers/Microsoft.Network/networkSecurityGroups/nsg-spoke-payments-data"
+  "nsg-spoke-shared-app" = "/subscriptions/ad8d35e1-6b28-4d24-ad9a-a51dc655c3ad/resourceGroups/rg-shared-ops/providers/Microsoft.Network/networkSecurityGroups/nsg-spoke-shared-app"
+  "nsg-spoke-shared-data" = "/subscriptions/ad8d35e1-6b28-4d24-ad9a-a51dc655c3ad/resourceGroups/rg-shared-ops/providers/Microsoft.Network/networkSecurityGroups/nsg-spoke-shared-data"
+}
+nsg_subnet_association_ids = {
+  "vnet-prod-hub/snet-hub-shared" = "/subscriptions/8e3af5dd-dd04-45fb-9986-23ac2180a4cf/resourceGroups/rg-prod-network/providers/Microsoft.Network/virtualNetworks/vnet-prod-hub/subnets/snet-hub-shared"
+  "vnet-spoke-payments/snet-payments-app" = "/subscriptions/3fe97833-5b60-4af0-8c9a-4478460d7705/resourceGroups/rg-prod-payment-app/providers/Microsoft.Network/virtualNetworks/vnet-spoke-payments/subnets/snet-payments-app"
+  "vnet-spoke-payments/snet-payments-data" = "/subscriptions/3fe97833-5b60-4af0-8c9a-4478460d7705/resourceGroups/rg-prod-payment-app/providers/Microsoft.Network/virtualNetworks/vnet-spoke-payments/subnets/snet-payments-data"
+  "vnet-spoke-shared/snet-shared-app" = "/subscriptions/ad8d35e1-6b28-4d24-ad9a-a51dc655c3ad/resourceGroups/rg-shared-ops/providers/Microsoft.Network/virtualNetworks/vnet-spoke-shared/subnets/snet-shared-app"
+  "vnet-spoke-shared/snet-shared-data" = "/subscriptions/ad8d35e1-6b28-4d24-ad9a-a51dc655c3ad/resourceGroups/rg-shared-ops/providers/Microsoft.Network/virtualNetworks/vnet-spoke-shared/subnets/snet-shared-data"
+}
+rule_ids = {
+  "nsg-prod/allow-bastion-inbound" = "/subscriptions/8e3af5dd-dd04-45fb-9986-23ac2180a4cf/resourceGroups/rg-prod-network/providers/Microsoft.Network/networkSecurityGroups/nsg-prod/securityRules/allow-bastion-inbound"
+  "nsg-prod/allow-onprem-mgmt-inbound" = "/subscriptions/8e3af5dd-dd04-45fb-9986-23ac2180a4cf/resourceGroups/rg-prod-network/providers/Microsoft.Network/networkSecurityGroups/nsg-prod/securityRules/allow-onprem-mgmt-inbound"
+  "nsg-prod/deny-internet-inbound" = "/subscriptions/8e3af5dd-dd04-45fb-9986-23ac2180a4cf/resourceGroups/rg-prod-network/providers/Microsoft.Network/networkSecurityGroups/nsg-prod/securityRules/deny-internet-inbound"
+  "nsg-spoke-payments-app/allow-hub-inbound" = "/subscriptions/3fe97833-5b60-4af0-8c9a-4478460d7705/resourceGroups/rg-prod-payment-app/providers/Microsoft.Network/networkSecurityGroups/nsg-spoke-payments-app/securityRules/allow-hub-inbound"
+  "nsg-spoke-payments-app/deny-internet-inbound" = "/subscriptions/3fe97833-5b60-4af0-8c9a-4478460d7705/resourceGroups/rg-prod-payment-app/providers/Microsoft.Network/networkSecurityGroups/nsg-spoke-payments-app/securityRules/deny-internet-inbound"
+  "nsg-spoke-payments-data/allow-app-subnet-inbound" = "/subscriptions/3fe97833-5b60-4af0-8c9a-4478460d7705/resourceGroups/rg-prod-payment-app/providers/Microsoft.Network/networkSecurityGroups/nsg-spoke-payments-data/securityRules/allow-app-subnet-inbound"
+  "nsg-spoke-payments-data/deny-all-other-inbound" = "/subscriptions/3fe97833-5b60-4af0-8c9a-4478460d7705/resourceGroups/rg-prod-payment-app/providers/Microsoft.Network/networkSecurityGroups/nsg-spoke-payments-data/securityRules/deny-all-other-inbound"
+  "nsg-spoke-shared-app/allow-hub-inbound" = "/subscriptions/ad8d35e1-6b28-4d24-ad9a-a51dc655c3ad/resourceGroups/rg-shared-ops/providers/Microsoft.Network/networkSecurityGroups/nsg-spoke-shared-app/securityRules/allow-hub-inbound"
+  "nsg-spoke-shared-app/deny-internet-inbound" = "/subscriptions/ad8d35e1-6b28-4d24-ad9a-a51dc655c3ad/resourceGroups/rg-shared-ops/providers/Microsoft.Network/networkSecurityGroups/nsg-spoke-shared-app/securityRules/deny-internet-inbound"
+  "nsg-spoke-shared-data/allow-app-subnet-inbound" = "/subscriptions/ad8d35e1-6b28-4d24-ad9a-a51dc655c3ad/resourceGroups/rg-shared-ops/providers/Microsoft.Network/networkSecurityGroups/nsg-spoke-shared-data/securityRules/allow-app-subnet-inbound"
+  "nsg-spoke-shared-data/allow-private-endpoint-inbound" = "/subscriptions/ad8d35e1-6b28-4d24-ad9a-a51dc655c3ad/resourceGroups/rg-shared-ops/providers/Microsoft.Network/networkSecurityGroups/nsg-spoke-shared-data/securityRules/allow-private-endpoint-inbound"
+  "nsg-spoke-shared-data/deny-all-other-inbound" = "/subscriptions/ad8d35e1-6b28-4d24-ad9a-a51dc655c3ad/resourceGroups/rg-shared-ops/providers/Microsoft.Network/networkSecurityGroups/nsg-spoke-shared-data/securityRules/deny-all-other-inbound"
+}
+subnet_ids = {
+  "vnet-prod-hub/AzureBastionSubnet" = "/subscriptions/8e3af5dd-dd04-45fb-9986-23ac2180a4cf/resourceGroups/rg-prod-network/providers/Microsoft.Network/virtualNetworks/vnet-prod-hub/subnets/AzureBastionSubnet"
+  "vnet-prod-hub/AzureFirewallSubnet" = "/subscriptions/8e3af5dd-dd04-45fb-9986-23ac2180a4cf/resourceGroups/rg-prod-network/providers/Microsoft.Network/virtualNetworks/vnet-prod-hub/subnets/AzureFirewallSubnet"
+  "vnet-prod-hub/GatewaySubnet" = "/subscriptions/8e3af5dd-dd04-45fb-9986-23ac2180a4cf/resourceGroups/rg-prod-network/providers/Microsoft.Network/virtualNetworks/vnet-prod-hub/subnets/GatewaySubnet"
+  "vnet-prod-hub/PrivateResolverInbound" = "/subscriptions/8e3af5dd-dd04-45fb-9986-23ac2180a4cf/resourceGroups/rg-prod-network/providers/Microsoft.Network/virtualNetworks/vnet-prod-hub/subnets/PrivateResolverInbound"
+  "vnet-prod-hub/PrivateResolverOutbound" = "/subscriptions/8e3af5dd-dd04-45fb-9986-23ac2180a4cf/resourceGroups/rg-prod-network/providers/Microsoft.Network/virtualNetworks/vnet-prod-hub/subnets/PrivateResolverOutbound"
+  "vnet-prod-hub/RouteServerSubnet" = "/subscriptions/8e3af5dd-dd04-45fb-9986-23ac2180a4cf/resourceGroups/rg-prod-network/providers/Microsoft.Network/virtualNetworks/vnet-prod-hub/subnets/RouteServerSubnet"
+  "vnet-prod-hub/snet-hub-shared" = "/subscriptions/8e3af5dd-dd04-45fb-9986-23ac2180a4cf/resourceGroups/rg-prod-network/providers/Microsoft.Network/virtualNetworks/vnet-prod-hub/subnets/snet-hub-shared"
+  "vnet-spoke-payments/snet-payments-app" = "/subscriptions/3fe97833-5b60-4af0-8c9a-4478460d7705/resourceGroups/rg-prod-payment-app/providers/Microsoft.Network/virtualNetworks/vnet-spoke-payments/subnets/snet-payments-app"
+  "vnet-spoke-payments/snet-payments-data" = "/subscriptions/3fe97833-5b60-4af0-8c9a-4478460d7705/resourceGroups/rg-prod-payment-app/providers/Microsoft.Network/virtualNetworks/vnet-spoke-payments/subnets/snet-payments-data"
+  "vnet-spoke-shared/snet-shared-app" = "/subscriptions/ad8d35e1-6b28-4d24-ad9a-a51dc655c3ad/resourceGroups/rg-shared-ops/providers/Microsoft.Network/virtualNetworks/vnet-spoke-shared/subnets/snet-shared-app"
+  "vnet-spoke-shared/snet-shared-data" = "/subscriptions/ad8d35e1-6b28-4d24-ad9a-a51dc655c3ad/resourceGroups/rg-shared-ops/providers/Microsoft.Network/virtualNetworks/vnet-spoke-shared/subnets/snet-shared-data"
+}
+vnet_ids = {
+  "vnet-prod-hub" = "/subscriptions/8e3af5dd-dd04-45fb-9986-23ac2180a4cf/resourceGroups/rg-prod-network/providers/Microsoft.Network/virtualNetworks/vnet-prod-hub"
+  "vnet-spoke-payments" = "/subscriptions/3fe97833-5b60-4af0-8c9a-4478460d7705/resourceGroups/rg-prod-payment-app/providers/Microsoft.Network/virtualNetworks/vnet-spoke-payments"
+  "vnet-spoke-shared" = "/subscriptions/ad8d35e1-6b28-4d24-ad9a-a51dc655c3ad/resourceGroups/rg-shared-ops/providers/Microsoft.Network/virtualNetworks/vnet-spoke-shared"
+}
