@@ -72,3 +72,8 @@ output "nsg_rules" {
   description = "Flattened NSG security rules from network.yaml, keyed by nsg/rule"
   value       = local.nsg_rules
 }
+
+output "nsg_subnet_associations" {
+  description = "NSG-to-subnet associations from network.yaml, keyed by vnet/subnet"
+  value       = local.nsg_subnet_associations
+}

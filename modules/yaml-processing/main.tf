@@ -462,6 +462,16 @@ locals {
       }
     }
   ]...)
+
+  # Flatten NSG-to-subnet associations. Every subnet that references an NSG by
+  # name becomes an association keyed by "vnet/subnet". The NSG module consumes
+  # this to associate each NSG with its subnet without hard-coding Azure IDs.
+  nsg_subnet_associations = {
+    for key, subnet in local.subnets :
+    key => subnet
+    if subnet.nsg != null
+  }
+
 }
 
 
@@ -498,6 +508,23 @@ check "nsg_references_resolve" {
       contains(keys(local.resource_groups_map), "${nsg.subscription}/${nsg.resource_group}")
     ])
     error_message = "Every network security group must reference a subscription and resource group that exist in azure.yaml, and the resource group must belong to the referenced subscription."
+  }
+}
+
+# ----------------------------------------------------------
+# Validate every NSG-to-subnet association references an NSG
+# that exists in network.yaml and lives in the same subscription
+# as the subnet it protects.
+# ----------------------------------------------------------
+
+check "nsg_subnet_associations_resolve" {
+  assert {
+    condition = alltrue([
+      for key, assoc in local.nsg_subnet_associations :
+      contains(keys(local.nsgs), assoc.nsg) &&
+      try(local.nsgs[assoc.nsg].subscription, null) == assoc.subscription
+    ])
+    error_message = "Every subnet that references an NSG must reference an NSG that exists in network.yaml's security.network_security_groups section and lives in the same subscription."
   }
 }
 

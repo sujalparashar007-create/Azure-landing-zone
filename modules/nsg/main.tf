@@ -21,6 +21,17 @@ locals {
       if s.display_name == nsg.subscription_display_name && s.state == "Enabled"
     ])
   }
+
+  # Resolve each association's subnet subscription (display name) to its Azure
+  # subscription ID, so each subnet resource_id can be constructed per subnet.
+  subnet_subscription_id = {
+    for key, assoc in module.yaml_processing.nsg_subnet_associations :
+    key => one([
+      for s in data.azurerm_subscriptions.available.subscriptions :
+      s.subscription_id
+      if s.display_name == assoc.subscription_display_name && s.state == "Enabled"
+    ])
+  }
 }
 
 check "subscriptions_resolvable" {
@@ -29,6 +40,15 @@ check "subscriptions_resolvable" {
       for name, id in local.nsg_subscription_id : id != null
     ])
     error_message = "Unable to resolve the referenced subscription display name to an Azure subscription ID. Verify the subscriptions exist and their display names are unique."
+  }
+}
+
+check "subnet_subscriptions_resolvable" {
+  assert {
+    condition = alltrue([
+      for key, id in local.subnet_subscription_id : id != null
+    ])
+    error_message = "Unable to resolve the referenced subnet subscription display name to an Azure subscription ID."
   }
 }
 
@@ -91,5 +111,27 @@ resource "azapi_resource" "rule" {
         destinationPortRanges = each.value.destination_port_ranges
       } : {}
     )
+  }
+}
+
+# Associates each referenced NSG with its subnet. azapi_update_resource uses
+# PATCH, so only the subnet's networkSecurityGroup property is changed — the
+# subnet's addressPrefix, delegation, and other properties (owned by the subnet
+# module) are left untouched. The subnet resource_id is reconstructed from the
+# flattened subnet data, and the NSG is referenced directly via
+# azapi_resource.nsg, giving every association an implicit dependency on both
+# the NSG (this module) and the subnet (created by the subnet module).
+resource "azapi_update_resource" "nsg_subnet_association" {
+  for_each = module.yaml_processing.nsg_subnet_associations
+
+  type        = "Microsoft.Network/virtualNetworks/subnets@2024-01-01"
+  resource_id = "/subscriptions/${local.subnet_subscription_id[each.key]}/resourceGroups/${each.value.resource_group}/providers/Microsoft.Network/virtualNetworks/${each.value.vnet_name}/subnets/${each.value.name}"
+
+  body = {
+    properties = {
+      networkSecurityGroup = {
+        id = azapi_resource.nsg[each.value.nsg].id
+      }
+    }
   }
 }
