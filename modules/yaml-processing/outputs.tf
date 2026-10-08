@@ -77,3 +77,18 @@ output "nsg_subnet_associations" {
   description = "NSG-to-subnet associations from network.yaml, keyed by vnet/subnet"
   value       = local.nsg_subnet_associations
 }
+
+output "route_tables" {
+  description = "Flattened route tables and routes from network.yaml"
+  value       = local.route_tables
+}
+
+output "route_table_routes" {
+  description = "Flattened route-table routes from network.yaml, keyed by route table/name"
+  value       = local.route_table_routes
+}
+
+output "route_table_subnet_associations" {
+  description = "Route-table-to-subnet associations from network.yaml, keyed by vnet/subnet"
+  value       = local.route_table_subnet_associations
+}

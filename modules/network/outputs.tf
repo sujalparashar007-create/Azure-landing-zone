@@ -27,3 +27,22 @@ output "nsg_subnet_association_ids" {
     if contains(keys(module.yaml_processing.nsg_subnet_associations), key)
   }
 }
+
+output "route_table_ids" {
+  description = "Map of route table name -> Azure resource ID."
+  value       = { for name, route_table in azapi_resource.route_table : name => route_table.id }
+}
+
+output "route_ids" {
+  description = "Map of route key (route table/route) -> Azure resource ID."
+  value       = { for key, route in azapi_resource.route : key => route.id }
+}
+
+output "route_table_subnet_association_ids" {
+  description = "Map of route-table-to-subnet association key (vnet/subnet) -> subnet resource ID."
+  value = {
+    for key, subnet in module.yaml_processing.subnets :
+    key => azapi_resource.subnet[key].id
+    if contains(keys(module.yaml_processing.route_table_subnet_associations), key)
+  }
+}

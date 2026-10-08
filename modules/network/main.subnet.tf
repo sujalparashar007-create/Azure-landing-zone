@@ -19,7 +19,7 @@ locals {
 resource "azapi_resource" "subnet" {
   for_each = module.yaml_processing.subnets
 
-  depends_on = [azapi_resource.vnet, azapi_resource.nsg]
+  depends_on = [azapi_resource.vnet, azapi_resource.nsg, azapi_resource.route_table]
 
   retry = var.azapi_retry
 
@@ -46,6 +46,11 @@ resource "azapi_resource" "subnet" {
       each.value.nsg != null ? {
         networkSecurityGroup = {
           id = azapi_resource.nsg[each.value.nsg].id
+        }
+      } : {},
+      each.value.route_table != null ? {
+        routeTable = {
+          id = azapi_resource.route_table[each.value.route_table].id
         }
       } : {}
     )

@@ -1,11 +1,12 @@
 # Network module
 
-This flat Terraform module creates the VNets, subnets, network security groups, security rules, and subnet-to-NSG associations defined by `network.yaml`. The `yaml-processing` child module reads `azure.yaml` and `network.yaml`, resolves their references, and supplies the flattened values consumed here. NSGs are attached directly in subnet PUT bodies because a later subnet PUT would otherwise remove an NSG attached by a separate PATCH.
+This flat Terraform module creates the VNets, subnets, route tables and routes, network security groups, security rules, and subnet associations defined by `network.yaml`. The `yaml-processing` child module reads `azure.yaml` and `network.yaml`, resolves their references, and supplies the flattened values consumed here. NSGs and route tables are attached directly in subnet PUT bodies because a later subnet PUT would otherwise remove an association attached by a separate PATCH.
 
 ## Files
 
 - `main.vnet.tf`: virtual networks.
 - `main.subnet.tf`: subnets and inline NSG associations.
+- `main.route-table.tf`: route tables and routes.
 - `main.nsg.tf`: NSGs and rules.
 - `providers.tf`: Terraform and provider requirements/configuration.
 - `variables.tf`: shared YAML paths and Azure API retry settings.

@@ -404,7 +404,7 @@ locals {
   # Flatten every subnet (hub + spokes) into a single map keyed by
   # "vnet/subnet". Each entry inherits the resolved subscription and resource
   # group of its parent VNet. route_table / nsg / nat_gateway are carried as
-  # metadata for later phases (they are NOT applied by the subnet module).
+  # metadata for later phases.
   subnets = merge([
     for vnet_key, vnet in local.vnets :
     {
@@ -421,6 +421,38 @@ locals {
         nat_gateway                       = try(s.nat_gateway, null)
         delegation                        = try(s.delegation, null)
         private_endpoint_network_policies = try(s.private_endpoint_network_policies, null)
+      }
+    }
+  ]...)
+
+  # Flatten route tables and resolve their subscription/resource group values
+  # through the same references used by the VNet and NSG data.
+  route_tables = {
+    for rt in try(local.network_config.routing.route_tables, []) :
+    rt.name => {
+      name           = rt.name
+      location       = try(rt.location, local.network_config.defaults.location)
+      subscription   = try(local.subscription_refs[try(rt.subscription_ref, rt.subscription)], rt.subscription)
+      resource_group = try(local.resource_group_refs[try(rt.resource_group_ref, rt.resource_group)], rt.resource_group)
+      subscription_display_name = try(
+        local.subscriptions_map[try(local.subscription_refs[try(rt.subscription_ref, rt.subscription)], rt.subscription)].display_name,
+        null
+      )
+      bgp_route_propagation_enabled = try(rt.bgp_route_propagation_enabled, true)
+      routes                        = try(rt.routes, [])
+    }
+  }
+
+  route_table_routes = merge([
+    for route_table_name, route_table in local.route_tables :
+    {
+      for route in route_table.routes :
+      "${route_table_name}/${route.name}" => {
+        name                = route.name
+        route_table_name    = route_table_name
+        address_prefix      = route.address_prefix
+        next_hop_type       = route.next_hop_type
+        next_hop_ip_address = try(route.next_hop_ip_address, null)
       }
     }
   ]...)
@@ -470,6 +502,12 @@ locals {
     for key, subnet in local.subnets :
     key => subnet
     if subnet.nsg != null
+  }
+
+  route_table_subnet_associations = {
+    for key, subnet in local.subnets :
+    key => subnet
+    if subnet.route_table != null
   }
 
 }
@@ -525,6 +563,35 @@ check "nsg_subnet_associations_resolve" {
       try(local.nsgs[assoc.nsg].subscription, null) == assoc.subscription
     ])
     error_message = "Every subnet that references an NSG must reference an NSG that exists in network.yaml's security.network_security_groups section and lives in the same subscription."
+  }
+}
+
+# ----------------------------------------------------------
+# Validate route tables and route-table-to-subnet associations.
+# ----------------------------------------------------------
+
+check "route_table_references_resolve" {
+  assert {
+    condition = alltrue([
+      for key, route_table in local.route_tables :
+      route_table.subscription != null &&
+      route_table.resource_group != null &&
+      route_table.subscription_display_name != null &&
+      contains(keys(local.resource_groups_map), "${route_table.subscription}/${route_table.resource_group}")
+    ])
+    error_message = "Every route table must reference a subscription and resource group that exist in azure.yaml, and the resource group must belong to the referenced subscription."
+  }
+}
+
+check "route_table_subnet_associations_resolve" {
+  assert {
+    condition = alltrue([
+      for key, assoc in local.route_table_subnet_associations :
+      contains(keys(local.route_tables), assoc.route_table) &&
+      local.route_tables[assoc.route_table].subscription == assoc.subscription &&
+      local.route_tables[assoc.route_table].resource_group == assoc.resource_group
+    ])
+    error_message = "Every subnet that references a route table must reference a route table that exists in network.yaml and lives in the same subscription and resource group."
   }
 }
 
