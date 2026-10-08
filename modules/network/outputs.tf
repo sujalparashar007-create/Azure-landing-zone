@@ -4,6 +4,11 @@ output "vnet_ids" {
   value       = { for key, vnet in azapi_resource.vnet : key => vnet.id }
 }
 
+output "peering_ids" {
+  description = "Map of VNet peering name -> Azure resource ID."
+  value       = { for name, peering in azapi_resource.peering : name => peering.id }
+}
+
 output "subnet_ids" {
   description = "Map of subnet key (vnet/subnet) -> Azure resource ID."
   value       = { for key, subnet in azapi_resource.subnet : key => subnet.id }

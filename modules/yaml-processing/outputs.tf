@@ -58,6 +58,11 @@ output "vnets" {
   value       = local.vnets
 }
 
+output "peerings" {
+  description = "Flattened VNet peerings from network.yaml"
+  value       = local.peerings
+}
+
 output "subnets" {
   description = "Flattened subnets (hub + spokes) from network.yaml, keyed by vnet/subnet"
   value       = local.subnets

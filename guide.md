@@ -1,75 +1,85 @@
-Implement Phase P4 — VNet Peering for the Azure Landing Zone network extension.
+Fix Phase P4 VNet Peering based on the actual Azure apply error.
 
-Follow the existing architecture exactly:
-network.yaml → modules/yaml-processing → YAML flattening/null_resource/for_each → modules/network → Azure resources.
+IMPORTANT:
+Do NOT start Phase P5.
+Do NOT deploy VPN Gateway as part of P4.
+Do NOT modify unrelated completed phases.
+
+Current P4 apply result:
+- peer-hub-to-spoke-shared: CREATED successfully
+- peer-hub-to-spoke-payments: CREATED successfully
+- peer-spoke-shared-to-hub: FAILED
+- peer-spoke-payments-to-hub: FAILED
+
+Both failures have the exact Azure error:
+
+RemoteVnetHasNoGateways
+
+Azure rejects the two spoke-to-hub peerings because:
+useRemoteGateways = true
+while the remote hub VNet vnet-prod-hub currently has no gateway.
+
+The intended network.yaml configuration is:
+
+Hub → Shared:
+allow_forwarded_traffic = true
+allow_gateway_transit = true
+use_remote_gateways = false
+
+Shared → Hub:
+allow_forwarded_traffic = true
+allow_gateway_transit = false
+use_remote_gateways = true
+
+Hub → Payments:
+allow_forwarded_traffic = true
+allow_gateway_transit = true
+use_remote_gateways = false
+
+Payments → Hub:
+allow_forwarded_traffic = true
+allow_gateway_transit = false
+use_remote_gateways = true
+
+Goal:
+Make Phase P4 fully deployable now without deploying the VPN Gateway in P4, while preserving network.yaml as the single source of truth and preserving the intended final architecture.
 
 Requirements:
 
-1. Treat config/network.yaml as the single source of truth.
-2. Parse and expose connectivity.peerings through modules/yaml-processing.
-3. Create the 4 YAML-defined VNet peerings exactly as configured:
-
-   - peer-hub-to-spoke-shared
-     vnet-prod-hub → vnet-spoke-shared
-     allow_forwarded_traffic = true
-     allow_gateway_transit = true
-     use_remote_gateways = false
-
-   - peer-spoke-shared-to-hub
-     vnet-spoke-shared → vnet-prod-hub
-     allow_forwarded_traffic = true
-     allow_gateway_transit = false
-     use_remote_gateways = true
-
-   - peer-hub-to-spoke-payments
-     vnet-prod-hub → vnet-spoke-payments
-     allow_forwarded_traffic = true
-     allow_gateway_transit = true
-     use_remote_gateways = false
-
-   - peer-spoke-payments-to-hub
-     vnet-spoke-payments → vnet-prod-hub
-     allow_forwarded_traffic = true
-     allow_gateway_transit = false
-     use_remote_gateways = true
-
-4. Resolve VNet IDs using the existing YAML-derived VNet/reference maps.
-   Do not hard-code subscription IDs, resource group names, or VNet IDs.
-
-5. Implement peerings inside the existing independent modules/network module.
-   Do not create a new landing-zone wrapper or root orchestration.
-
-6. Preserve all completed P0/P1/P2/P3 implementations:
-   - VNets
-   - Subnets
-   - NSGs
-   - NSG rules
-   - NSG-subnet associations
-   - Route Tables
-   - UDRs
-   Do not modify/recreate them unless strictly required for peering.
-
-7. Do not deploy Route Server because features.route_server = false.
-
-8. Add appropriate validation/checks for:
-   - unresolved local VNet references
-   - unresolved remote VNet references
-   - invalid/duplicate peering definitions
-
-9. Use for_each and keep the implementation fully YAML-driven.
-
-10. Run:
+1. Investigate the current P4 implementation and Terraform state first.
+2. Do NOT destroy or recreate the two peerings that already exist successfully.
+3. Do NOT deploy any VPN Gateway, Public IP, NAT Gateway, Firewall, Bastion, or other future-phase resource.
+4. Do NOT change the existing VNet, subnet, NSG, NSG rules, route tables, or UDR implementations.
+5. Do NOT permanently hard-code useRemoteGateways=false for the spoke-to-hub peerings because network.yaml explicitly defines it as true.
+6. Design the implementation so that:
+   - P4 can successfully create the peerings that Azure currently permits.
+   - The configuration remains YAML-driven.
+   - The intended use_remote_gateways=true behavior is preserved and can automatically reconcile once the Hub VPN Gateway exists in the later VPN Gateway phase.
+7. Prefer a Terraform/Azure dependency-aware solution rather than changing the architecture or introducing manual Azure resources.
+8. If the current architecture cannot satisfy both "P4 fully applied now" and "network.yaml remains the final source of truth" without a future-phase dependency, explain the exact limitation before making changes and propose the smallest clean implementation.
+9. Do not introduce a new landing-zone wrapper or root orchestration.
+10. Keep the existing:
+    network.yaml → yaml-processing → flattening/null_resource/for_each → modules/network → Azure resources
+    architecture.
+11. Preserve all existing P4 validation checks:
+    - duplicate peering names
+    - duplicate local-to-remote definitions
+    - empty/self-referencing VNets
+    - unresolved local VNet references
+    - unresolved remote VNet references
+12. Run:
     terraform fmt -recursive
     terraform validate
     terraform plan
+13. Do NOT run terraform apply.
 
-Do NOT run terraform apply.
-
-Report:
-- files changed
-- peering resources created by the plan
-- plan summary
-- any validation issues
-- confirm that there are no unexpected destroys or unrelated changes.
+The final report must clearly state:
+- exact files changed
+- exact root cause
+- how the solution handles Azure's RemoteVnetHasNoGateways restriction
+- how network.yaml remains the source of truth
+- whether the plan will create/change/destroy resources
+- whether the two already-created peerings remain untouched
+- whether P4 is now safe to apply
 
 Do not perform unrelated refactoring.

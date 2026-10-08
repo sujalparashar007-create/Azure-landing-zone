@@ -1,10 +1,11 @@
 # Network module
 
-This flat Terraform module creates the VNets, subnets, route tables and routes, network security groups, security rules, and subnet associations defined by `network.yaml`. The `yaml-processing` child module reads `azure.yaml` and `network.yaml`, resolves their references, and supplies the flattened values consumed here. NSGs and route tables are attached directly in subnet PUT bodies because a later subnet PUT would otherwise remove an association attached by a separate PATCH.
+This flat Terraform module creates the VNets, VNet peerings, subnets, route tables and routes, network security groups, security rules, and subnet associations defined by `network.yaml`. The `yaml-processing` child module reads `azure.yaml` and `network.yaml`, resolves their references, and supplies the flattened values consumed here. NSGs and route tables are attached directly in subnet PUT bodies because a later subnet PUT would otherwise remove an association attached by a separate PATCH.
 
 ## Files
 
 - `main.vnet.tf`: virtual networks.
+- `main.peering.tf`: VNet peerings.
 - `main.subnet.tf`: subnets and inline NSG associations.
 - `main.route-table.tf`: route tables and routes.
 - `main.nsg.tf`: NSGs and rules.
@@ -22,6 +23,12 @@ terraform plan
 ```
 
 Do not run `apply`, `destroy`, or CLI import as part of validation.
+
+`remote_gateways_ready` defaults to `false` because Azure rejects
+`useRemoteGateways=true` until the remote VNet has a deployed gateway. The
+YAML `use_remote_gateways` value remains the source of truth; the VPN gateway
+phase must set this capability gate to `true` to reconcile the deferred
+spoke-to-hub peerings.
 
 ## Adding a component
 

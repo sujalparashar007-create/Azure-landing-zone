@@ -401,6 +401,20 @@ locals {
 
   vnets = merge({ (local.hub_vnet.name) = local.hub_vnet }, local.spoke_vnets)
 
+  raw_peerings = try(local.network_config.connectivity.peerings, [])
+
+  peerings = {
+    for peering in local.raw_peerings :
+    peering.name => {
+      name                    = peering.name
+      vnet                    = peering.vnet
+      remote_vnet             = peering.remote_vnet
+      allow_forwarded_traffic = peering.allow_forwarded_traffic
+      allow_gateway_transit   = peering.allow_gateway_transit
+      use_remote_gateways     = peering.use_remote_gateways
+    }
+  }
+
   # Flatten every subnet (hub + spokes) into a single map keyed by
   # "vnet/subnet". Each entry inherits the resolved subscription and resource
   # group of its parent VNet. route_table / nsg / nat_gateway are carried as
@@ -528,6 +542,50 @@ check "network_references_resolve" {
       contains(keys(local.resource_groups_map), "${vnet.subscription}/${vnet.resource_group}")
     ])
     error_message = "Every network resource must reference a subscription and resource group that exist in azure.yaml, and the resource group must belong to the referenced subscription."
+  }
+}
+
+check "peering_definitions_valid" {
+  assert {
+    condition     = length(local.raw_peerings) == length(local.peerings)
+    error_message = "VNet peering names must be unique in network.yaml."
+  }
+
+  assert {
+    condition = length(distinct([
+      for peering in local.raw_peerings :
+      "${peering.vnet}/${peering.remote_vnet}"
+    ])) == length(local.raw_peerings)
+    error_message = "Duplicate local-to-remote VNet peering definitions are not allowed in network.yaml."
+  }
+
+  assert {
+    condition = alltrue([
+      for peering in local.peerings :
+      peering.name != "" &&
+      peering.vnet != "" &&
+      peering.remote_vnet != "" &&
+      peering.vnet != peering.remote_vnet
+    ])
+    error_message = "Every VNet peering must have a unique name, distinct local and remote VNet references, and both references must be non-empty."
+  }
+}
+
+check "peering_vnet_references_resolve" {
+  assert {
+    condition = alltrue([
+      for peering in local.peerings :
+      contains(keys(local.vnets), peering.vnet)
+    ])
+    error_message = "Every VNet peering local VNet reference must resolve to a VNet defined in network.yaml."
+  }
+
+  assert {
+    condition = alltrue([
+      for peering in local.peerings :
+      contains(keys(local.vnets), peering.remote_vnet)
+    ])
+    error_message = "Every VNet peering remote VNet reference must resolve to a VNet defined in network.yaml."
   }
 }
 
