@@ -63,6 +63,21 @@ output "peerings" {
   value       = local.peerings
 }
 
+output "public_ips" {
+  description = "Enabled Public IP definitions from network.yaml"
+  value       = local.public_ips
+}
+
+output "nat_gateways" {
+  description = "Enabled NAT Gateway definitions from network.yaml"
+  value       = local.nat_gateways
+}
+
+output "nat_gateway_subnet_associations" {
+  description = "NAT Gateway-to-subnet associations from network.yaml"
+  value       = local.nat_gateway_subnet_associations
+}
+
 output "subnets" {
   description = "Flattened subnets (hub + spokes) from network.yaml, keyed by vnet/subnet"
   value       = local.subnets

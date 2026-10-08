@@ -175,6 +175,67 @@ locals {
     "${assignment.scope_type}/${assignment.scope_name}/${assignment.role}/${assignment.principal}" => assignment
   }
 
+  features = try(local.network_config.features, {})
+
+  public_ip_definitions = try(local.network_config.public_ips, [])
+
+  enabled_public_ip_names = toset(concat(
+    try(local.features.firewall, false) ? [
+      for gateway in try(local.network_config.gateways.firewall, []) : gateway.public_ip
+    ] : [],
+    try(local.features.vpn_gateway, false) ? [
+      for gateway in try(local.network_config.gateways.vpn_gateway, []) : gateway.public_ip
+    ] : [],
+    try(local.features.bastion, false) ? [
+      for bastion in try(local.network_config.gateways.bastion, []) : bastion.public_ip
+    ] : [],
+    try(local.features.nat_gateway, false) ? [
+      for nat_gateway in try(local.network_config.nat, []) : nat_gateway.public_ip
+    ] : [],
+    try(local.features.route_server, false) ? [
+      for route_server in try(local.network_config.routing.route_server, []) : route_server.public_ip
+    ] : []
+  ))
+
+  public_ips = {
+    for public_ip in local.public_ip_definitions :
+    public_ip.name => {
+      name           = public_ip.name
+      location       = try(public_ip.location, local.network_config.defaults.location)
+      subscription   = try(local.subscription_refs[try(public_ip.subscription_ref, public_ip.subscription)], public_ip.subscription)
+      resource_group = try(local.resource_group_refs[try(public_ip.resource_group_ref, public_ip.resource_group)], public_ip.resource_group)
+      subscription_display_name = try(
+        local.subscriptions_map[try(local.subscription_refs[try(public_ip.subscription_ref, public_ip.subscription)], public_ip.subscription)].display_name,
+        null
+      )
+      sku        = public_ip.sku
+      allocation = public_ip.allocation
+      zones      = try(public_ip.zones, [])
+      tags       = try(public_ip.tags, local.network_config.defaults.tags)
+    }
+    if contains(local.enabled_public_ip_names, public_ip.name)
+  }
+
+  nat_gateway_definitions = try(local.network_config.nat, [])
+
+  nat_gateways = {
+    for nat_gateway in local.nat_gateway_definitions :
+    nat_gateway.name => {
+      name           = nat_gateway.name
+      location       = try(nat_gateway.location, local.network_config.defaults.location)
+      subscription   = try(local.subscription_refs[try(nat_gateway.subscription_ref, nat_gateway.subscription)], nat_gateway.subscription)
+      resource_group = try(local.resource_group_refs[try(nat_gateway.resource_group_ref, nat_gateway.resource_group)], nat_gateway.resource_group)
+      subscription_display_name = try(
+        local.subscriptions_map[try(local.subscription_refs[try(nat_gateway.subscription_ref, nat_gateway.subscription)], nat_gateway.subscription)].display_name,
+        null
+      )
+      sku       = nat_gateway.sku
+      public_ip = nat_gateway.public_ip
+      tags      = try(nat_gateway.tags, local.network_config.defaults.tags)
+    }
+    if try(local.features.nat_gateway, false)
+  }
+
 
   # ----------------------------------------------------------
   # Policies (tenant-level + every management group level)
@@ -524,6 +585,88 @@ locals {
     if subnet.route_table != null
   }
 
+  nat_gateway_subnet_associations = {
+    for key, subnet in local.subnets :
+    key => subnet
+    if subnet.nat_gateway != null
+  }
+
+}
+
+check "public_ip_definitions_valid" {
+  assert {
+    condition     = length(local.public_ip_definitions) == length(distinct([for public_ip in local.public_ip_definitions : public_ip.name]))
+    error_message = "Public IP names must be unique in network.yaml."
+  }
+
+  assert {
+    condition = alltrue([
+      for public_ip in local.public_ips :
+      public_ip.subscription != null &&
+      public_ip.resource_group != null &&
+      public_ip.subscription_display_name != null &&
+      contains(keys(local.resource_groups_map), "${public_ip.subscription}/${public_ip.resource_group}")
+    ])
+    error_message = "Every enabled Public IP must reference a subscription and resource group that exist in azure.yaml."
+  }
+}
+
+check "public_ip_feature_references_resolve" {
+  assert {
+    condition = alltrue([
+      for public_ip_name in local.enabled_public_ip_names :
+      contains([for public_ip in local.public_ip_definitions : public_ip.name], public_ip_name)
+    ])
+    error_message = "Every enabled network feature must reference a Public IP defined in network.yaml."
+  }
+
+  assert {
+    condition = !try(local.features.route_server, false) || alltrue([
+      for route_server in try(local.network_config.routing.route_server, []) :
+      contains(keys(local.public_ips), route_server.public_ip)
+    ])
+    error_message = "Route Server Public IPs must be defined only when features.route_server is enabled."
+  }
+
+  assert {
+    condition = try(local.features.route_server, false) || alltrue([
+      for route_server in try(local.network_config.routing.route_server, []) :
+      !contains(keys(local.public_ips), route_server.public_ip)
+    ])
+    error_message = "Route Server Public IPs must remain disabled while features.route_server is false."
+  }
+}
+
+check "nat_gateway_definitions_valid" {
+  assert {
+    condition     = length(local.nat_gateway_definitions) == length(distinct([for nat_gateway in local.nat_gateway_definitions : nat_gateway.name]))
+    error_message = "NAT Gateway names must be unique in network.yaml."
+  }
+
+  assert {
+    condition = alltrue([
+      for nat_gateway in local.nat_gateways :
+      nat_gateway.subscription != null &&
+      nat_gateway.resource_group != null &&
+      nat_gateway.subscription_display_name != null &&
+      contains(keys(local.resource_groups_map), "${nat_gateway.subscription}/${nat_gateway.resource_group}") &&
+      contains(keys(local.public_ips), nat_gateway.public_ip)
+    ])
+    error_message = "Every enabled NAT Gateway must resolve its subscription, resource group, and Public IP reference."
+  }
+}
+
+check "nat_gateway_subnet_references_resolve" {
+  assert {
+    condition = alltrue([
+      for key, subnet in local.subnets :
+      subnet.nat_gateway == null ||
+      (contains(keys(local.nat_gateways), subnet.nat_gateway) &&
+        local.nat_gateways[subnet.nat_gateway].subscription == subnet.subscription &&
+      local.nat_gateways[subnet.nat_gateway].resource_group == subnet.resource_group)
+    ])
+    error_message = "Every subnet NAT Gateway reference must resolve to an enabled NAT Gateway in the same subscription and resource group."
+  }
 }
 
 

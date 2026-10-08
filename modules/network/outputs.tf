@@ -9,6 +9,25 @@ output "peering_ids" {
   value       = { for name, peering in azapi_resource.peering : name => peering.id }
 }
 
+output "public_ip_ids" {
+  description = "Map of enabled Public IP name -> Azure resource ID."
+  value       = { for name, public_ip in azapi_resource.public_ip : name => public_ip.id }
+}
+
+output "nat_gateway_ids" {
+  description = "Map of enabled NAT Gateway name -> Azure resource ID."
+  value       = { for name, nat_gateway in azapi_resource.nat_gateway : name => nat_gateway.id }
+}
+
+output "nat_gateway_subnet_association_ids" {
+  description = "Map of NAT Gateway-to-subnet association key -> subnet resource ID."
+  value = {
+    for key, subnet in module.yaml_processing.subnets :
+    key => azapi_resource.subnet[key].id
+    if contains(keys(module.yaml_processing.nat_gateway_subnet_associations), key)
+  }
+}
+
 output "subnet_ids" {
   description = "Map of subnet key (vnet/subnet) -> Azure resource ID."
   value       = { for key, subnet in azapi_resource.subnet : key => subnet.id }
