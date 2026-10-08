@@ -1,3 +1,4 @@
+# Azure resource IDs exported by the flat network module.
 output "vnet_ids" {
   description = "Map of Virtual Network name -> Azure resource ID."
   value       = { for key, vnet in azapi_resource.vnet : key => vnet.id }
@@ -20,5 +21,9 @@ output "rule_ids" {
 
 output "nsg_subnet_association_ids" {
   description = "Map of NSG-to-subnet association key (vnet/subnet) -> subnet resource ID."
-  value       = { for key, assoc in azapi_update_resource.nsg_subnet_association : key => assoc.id }
+  value = {
+    for key, subnet in module.yaml_processing.subnets :
+    key => azapi_resource.subnet[key].id
+    if contains(keys(module.yaml_processing.nsg_subnet_associations), key)
+  }
 }

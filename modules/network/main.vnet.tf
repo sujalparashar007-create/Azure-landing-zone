@@ -1,3 +1,5 @@
+# Creates VNets from the network.yaml data flattened by yaml-processing.
+# Inputs are YAML paths and shared retry settings; outputs are VNet IDs.
 module "yaml_processing" {
   source = "../yaml-processing"
 
@@ -40,6 +42,8 @@ check "subscriptions_resolvable" {
 # parent_id.
 resource "azapi_resource" "vnet" {
   for_each = module.yaml_processing.vnets
+
+  retry = var.azapi_retry
 
   type      = "Microsoft.Network/virtualNetworks@2024-01-01"
   name      = each.value.name

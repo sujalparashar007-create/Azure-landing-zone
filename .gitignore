@@ -4,4 +4,5 @@
 *.tfstate.*
 *.tfplan
 tfplan
+*.log
 .terraform.lock.hcl

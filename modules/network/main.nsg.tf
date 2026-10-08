@@ -1,3 +1,6 @@
+# Creates NSGs and rules from network.yaml. Subnet NSG associations are owned
+# by the subnet PUT in main.subnet.tf so later subnet updates preserve them.
+# Inputs are flattened YAML values and shared retry settings; outputs are IDs.
 locals {
   nsg_subscription_id = {
     for name, nsg in module.yaml_processing.nsgs :
@@ -8,32 +11,15 @@ locals {
     ])
   }
 
-  # Resolve each association's subnet subscription (display name) to its Azure
-  # subscription ID, so each subnet resource_id can be constructed per subnet.
-  subnet_subscription_id = {
-    for key, assoc in module.yaml_processing.nsg_subnet_associations :
-    key => one([
-      for s in data.azurerm_subscriptions.available.subscriptions :
-      s.subscription_id
-      if s.display_name == assoc.subscription_display_name && s.state == "Enabled"
-    ])
-  }
-}
-
-check "subnet_subscriptions_resolvable" {
-  assert {
-    condition = alltrue([
-      for key, id in local.subnet_subscription_id : id != null
-    ])
-    error_message = "Unable to resolve the referenced subnet subscription display name to an Azure subscription ID."
-  }
 }
 
 # Creates every Network Security Group from the flattened network.yaml data in
 # its own subscription/resource group. Security rules are created separately
-# below as child resources (subnet association is a later phase).
+# below as child resources.
 resource "azapi_resource" "nsg" {
   for_each = module.yaml_processing.nsgs
+
+  retry = var.azapi_retry
 
   type      = "Microsoft.Network/networkSecurityGroups@2024-01-01"
   name      = each.value.name
@@ -49,6 +35,8 @@ resource "azapi_resource" "nsg" {
 # 404 errors from rules being created before the NSG is ready.
 resource "azapi_resource" "rule" {
   for_each = module.yaml_processing.nsg_rules
+
+  retry = var.azapi_retry
 
   type      = "Microsoft.Network/networkSecurityGroups/securityRules@2024-01-01"
   name      = each.value.name
@@ -88,29 +76,5 @@ resource "azapi_resource" "rule" {
         destinationPortRanges = each.value.destination_port_ranges
       } : {}
     )
-  }
-}
-
-# Associates each referenced NSG with its subnet. azapi_update_resource uses
-# PATCH, so only the subnet's networkSecurityGroup property is changed — the
-# subnet's addressPrefix, delegation, and other properties (owned by the subnet
-# module) are left untouched. The subnet resource_id is reconstructed from the
-# flattened subnet data, and the NSG is referenced directly via
-# azapi_resource.nsg, giving every association an implicit dependency on both
-# the NSG (this module) and the subnet (created by the subnet module).
-resource "azapi_update_resource" "nsg_subnet_association" {
-  for_each = module.yaml_processing.nsg_subnet_associations
-
-  depends_on = [azapi_resource.subnet, azapi_resource.nsg]
-
-  type        = "Microsoft.Network/virtualNetworks/subnets@2024-01-01"
-  resource_id = "/subscriptions/${local.subnet_subscription_id[each.key]}/resourceGroups/${each.value.resource_group}/providers/Microsoft.Network/virtualNetworks/${each.value.vnet_name}/subnets/${each.value.name}"
-
-  body = {
-    properties = {
-      networkSecurityGroup = {
-        id = azapi_resource.nsg[each.value.nsg].id
-      }
-    }
   }
 }

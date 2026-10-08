@@ -1,3 +1,7 @@
+# Creates subnets and inline NSG associations from network.yaml data flattened
+# by yaml-processing. Inputs are shared YAML and retry variables; outputs are
+# subnet IDs. Inline NSG ownership prevents later subnet PUTs from detaching
+# an NSG that was previously attached by a separate PATCH.
 locals {
   subnet_module_subscription_id = {
     for key, subnet in module.yaml_processing.subnets :
@@ -16,6 +20,8 @@ resource "azapi_resource" "subnet" {
   for_each = module.yaml_processing.subnets
 
   depends_on = [azapi_resource.vnet, azapi_resource.nsg]
+
+  retry = var.azapi_retry
 
   type      = "Microsoft.Network/virtualNetworks/subnets@2024-01-01"
   name      = each.value.name
@@ -36,6 +42,11 @@ resource "azapi_resource" "subnet" {
       } : {},
       each.value.private_endpoint_network_policies != null ? {
         privateEndpointNetworkPolicies = each.value.private_endpoint_network_policies
+      } : {},
+      each.value.nsg != null ? {
+        networkSecurityGroup = {
+          id = azapi_resource.nsg[each.value.nsg].id
+        }
       } : {}
     )
   }
