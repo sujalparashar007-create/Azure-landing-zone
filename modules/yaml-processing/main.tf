@@ -236,6 +236,31 @@ locals {
     if try(local.features.nat_gateway, false)
   }
 
+  bastion_definitions = try(local.network_config.gateways.bastion, [])
+
+  bastions = {
+    for bastion in local.bastion_definitions :
+    bastion.name => {
+      name           = bastion.name
+      location       = try(bastion.location, local.network_config.defaults.location)
+      subscription   = try(local.subscription_refs[try(bastion.subscription_ref, bastion.subscription)], bastion.subscription)
+      resource_group = try(local.resource_group_refs[try(bastion.resource_group_ref, bastion.resource_group)], bastion.resource_group)
+      subscription_display_name = try(
+        local.subscriptions_map[try(local.subscription_refs[try(bastion.subscription_ref, bastion.subscription)], bastion.subscription)].display_name,
+        null
+      )
+      sku                = bastion.sku
+      subnet             = bastion.subnet
+      public_ip          = bastion.public_ip
+      copy_paste_enabled = try(bastion.copy_paste_enabled, false)
+      file_copy_enabled  = try(bastion.file_copy_enabled, false)
+      tunneling_enabled  = try(bastion.tunneling_enabled, false)
+      ip_connect_enabled = try(bastion.ip_connect_enabled, false)
+      enabled            = try(local.features.bastion, false)
+    }
+    if try(local.features.bastion, false)
+  }
+
   firewall_definitions = try(local.network_config.gateways.firewall, [])
 
   firewalls = {
@@ -723,6 +748,29 @@ check "nat_gateway_subnet_references_resolve" {
       local.nat_gateways[subnet.nat_gateway].resource_group == subnet.resource_group)
     ])
     error_message = "Every subnet NAT Gateway reference must resolve to an enabled NAT Gateway in the same subscription and resource group."
+  }
+}
+
+check "bastion_definitions_valid" {
+  assert {
+    condition     = length(local.bastion_definitions) == length(distinct([for bastion in local.bastion_definitions : bastion.name]))
+    error_message = "Bastion names must be unique in network.yaml."
+  }
+
+  assert {
+    condition = alltrue([
+      for bastion in local.bastions :
+      bastion.subscription != null &&
+      bastion.resource_group != null &&
+      bastion.subscription_display_name != null &&
+      contains(keys(local.resource_groups_map), "${bastion.subscription}/${bastion.resource_group}") &&
+      contains(keys(local.public_ips), bastion.public_ip) &&
+      contains([
+        for subnet in local.subnets :
+        "${subnet.subscription}/${subnet.resource_group}/${subnet.name}"
+      ], "${bastion.subscription}/${bastion.resource_group}/${bastion.subnet}")
+    ])
+    error_message = "Every enabled Bastion must resolve its subscription, resource group, Public IP, and subnet references."
   }
 }
 

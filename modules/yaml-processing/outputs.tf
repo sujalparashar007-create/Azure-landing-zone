@@ -73,6 +73,11 @@ output "nat_gateways" {
   value       = local.nat_gateways
 }
 
+output "bastions" {
+  description = "Enabled Azure Bastion definitions from network.yaml"
+  value       = local.bastions
+}
+
 output "nat_gateway_subnet_associations" {
   description = "NAT Gateway-to-subnet associations from network.yaml"
   value       = local.nat_gateway_subnet_associations

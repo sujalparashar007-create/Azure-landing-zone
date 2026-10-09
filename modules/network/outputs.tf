@@ -19,6 +19,11 @@ output "nat_gateway_ids" {
   value       = { for name, nat_gateway in azapi_resource.nat_gateway : name => nat_gateway.id }
 }
 
+output "bastion_ids" {
+  description = "Map of Azure Bastion name -> Azure resource ID."
+  value       = { for name, bastion in azapi_resource.bastion : name => bastion.id }
+}
+
 output "nat_gateway_subnet_association_ids" {
   description = "Map of NAT Gateway-to-subnet association key -> subnet resource ID."
   value = {
