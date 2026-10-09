@@ -1,25 +1,11 @@
-Refactor the Azure Bastion implementation to use AzAPI, following the existing VNet/subnet implementation pattern.
+Audit and prepare Phase 9 Step 2 only: DNS Forwarding Ruleset, Forwarding Rule, and Ruleset VNet Links for the existing Azure Landing Zone Terraform project. Do not apply changes or create/delete/modify Azure resources during this task.
 
-Project architecture must remain:
-network.yaml → modules/yaml-processing (reference resolution and flattening) → modules/network → Azure resources.
+Preserve architecture: network.yaml → modules/yaml-processing (YAML parsing/flattening + null_resource) → modules/network → Azure. Keep network.yaml as source of truth. Follow existing AzAPI/module conventions and subscription/RG reference resolution; do not hardcode subscription IDs or duplicate YAML values.
 
-Tasks:
+1. Inspect current network.yaml, yaml-processing flattening/outputs, modules/network resources, provider/API-version conventions, Terraform state, and instructor baseline.
+2. Perform read-only Azure existence checks for ruleset ruleset-hub-corp, forwarding rule for corp.example.com., and expected ruleset VNet links for vnet-prod-hub, vnet-spoke-shared, and vnet-spoke-payments. Check exact resource IDs in the correct subscriptions/RGs. Do not assume resources are absent just because they are missing from Terraform state. Report any live-but-unmanaged resources and recommend no import/create until reviewed.
+3. Verify that the existing outbound endpoint outbound-hub is referenced correctly. Preserve forwarding target 192.168.100.10 port 53 and domain corp.example.com. exactly as configured in network.yaml. Flag that DNS target reachability has not been proven; do not claim end-to-end forwarding works.
+4. Propose the minimal files/changes needed to flatten and output rulesets, forwarding rules, and VNet links from network.yaml, and create corresponding AzAPI resources with correct parent IDs, dependencies, API versions, subscription resolution, and tags/location where applicable. Do not change existing resolver/endpoints, VNets, subnets, peerings, NSGs, routes, firewall, Bastion, or unrelated phases.
+5. Report findings first, then implement only the code changes for Step 2. Do not run terraform apply or other mutating Azure commands. Run terraform fmt and terraform validate in both modules/yaml-processing and modules/network. Generate a fresh terraform plan and report the exact add/change/replace/destroy counts and each affected resource. Stop if any unexpected changes, replacement, or destroy is planned; do not try to fix by deleting existing resources.
 
-1. Revert ONLY the recent provider-level Bastion fix:
-   - Remove network_subscription_id from modules/network/variables.tf.
-   - Restore modules/network/providers.tf to its exact pre-fix configuration.
-   - Do not revert unrelated changes.
-
-2. Replace azurerm_bastion_host in modules/network/main.bastion.tf with an azapi_resource that creates Microsoft.Network/bastionHosts using the existing AzAPI provider version and conventions in this project.
-
-3. Resolve the Bastion subscription and resource group from existing network.yaml references through modules/yaml-processing. Follow the same established approach used by the working VNet/subnet resources. Do not hardcode subscription IDs or add a separate subscription variable.
-
-4. Reuse the exact existing AzureBastionSubnet and pip-bastion-hub resource IDs resolved from the project configuration. Preserve the existing Bastion settings from the current implementation and use the correct AzAPI API version and request body schema for Microsoft.Network/bastionHosts.
-
-5. Update outputs only as needed to preserve the existing bastion_ids output contract.
-
-6. Do not modify network.yaml, existing deployed resources, other modules, Terraform state, or unrelated resources. Do not add provider aliases or implement other features.
-
-7. Run terraform fmt and terraform validate only. Do not run plan, apply, destroy, import, or state-modifying commands.
-
-Report the exact diff, the API version used, and validation results. Stop for review.
+At the end, provide a concise changed-file summary, Azure existence-check results, validation results, and full plan summary for review. Do not apply.

@@ -78,6 +78,21 @@ output "bastions" {
   value       = local.bastions
 }
 
+output "private_dns_resolvers" {
+  description = "Flattened Private DNS Resolver definitions from network.yaml"
+  value       = local.private_dns_resolvers
+}
+
+output "private_dns_resolver_inbound_endpoints" {
+  description = "Flattened Private DNS Resolver inbound endpoints from network.yaml"
+  value       = local.private_dns_resolver_inbound_endpoints
+}
+
+output "private_dns_resolver_outbound_endpoints" {
+  description = "Flattened Private DNS Resolver outbound endpoints from network.yaml"
+  value       = local.private_dns_resolver_outbound_endpoints
+}
+
 output "nat_gateway_subnet_associations" {
   description = "NAT Gateway-to-subnet associations from network.yaml"
   value       = local.nat_gateway_subnet_associations

@@ -261,6 +261,41 @@ locals {
     if try(local.features.bastion, false)
   }
 
+  private_dns_resolvers = {
+    for resolver in try(local.network_config.dns.private_dns_resolver, []) :
+    resolver.name => {
+      name           = resolver.name
+      location       = try(resolver.location, local.network_config.defaults.location)
+      subscription   = try(local.subscription_refs[try(resolver.subscription_ref, resolver.subscription)], resolver.subscription)
+      resource_group = try(local.resource_group_refs[try(resolver.resource_group_ref, resolver.resource_group)], resolver.resource_group)
+      subscription_display_name = try(
+        local.subscriptions_map[try(local.subscription_refs[try(resolver.subscription_ref, resolver.subscription)], resolver.subscription)].display_name,
+        null
+      )
+      vnet = resolver.vnet
+      tags = try(resolver.tags, local.network_config.defaults.tags)
+    }
+  }
+
+  private_dns_resolver_inbound_endpoints = {
+    for endpoint in try(local.network_config.dns.resolver_endpoints.inbound, []) :
+    endpoint.name => {
+      name                  = endpoint.name
+      resolver              = endpoint.resolver
+      subnet                = endpoint.subnet
+      private_ip_allocation = endpoint.private_ip_allocation
+    }
+  }
+
+  private_dns_resolver_outbound_endpoints = {
+    for endpoint in try(local.network_config.dns.resolver_endpoints.outbound, []) :
+    endpoint.name => {
+      name     = endpoint.name
+      resolver = endpoint.resolver
+      subnet   = endpoint.subnet
+    }
+  }
+
   firewall_definitions = try(local.network_config.gateways.firewall, [])
 
   firewalls = {
