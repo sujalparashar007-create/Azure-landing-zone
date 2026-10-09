@@ -364,6 +364,52 @@ locals {
     }
   ]...)
 
+  storage_accounts = {
+    for storage in try(local.network_config.monitoring.storage_accounts, []) :
+    storage.name => {
+      name           = storage.name
+      location       = try(storage.location, local.network_config.defaults.location)
+      subscription   = try(local.subscription_refs[try(storage.subscription_ref, storage.subscription)], storage.subscription)
+      resource_group = try(local.resource_group_refs[try(storage.resource_group_ref, storage.resource_group)], storage.resource_group)
+      subscription_display_name = try(
+        local.subscriptions_map[try(local.subscription_refs[try(storage.subscription_ref, storage.subscription)], storage.subscription)].display_name,
+        null
+      )
+      sku                             = storage.sku
+      kind                            = storage.kind
+      access_tier                     = try(storage.access_tier, null)
+      https_only                      = try(storage.https_only, true)
+      minimum_tls_version             = try(storage.minimum_tls_version, "TLS1_2")
+      public_network_access           = try(storage.public_network_access_enabled, true)
+      allow_nested_items_to_be_public = try(storage.allow_nested_items_to_be_public, false)
+      tags                            = try(storage.tags, local.network_config.defaults.tags)
+    }
+  }
+
+  private_endpoints = {
+    for endpoint in try(local.network_config.private_endpoints, []) :
+    endpoint.name => {
+      name           = endpoint.name
+      location       = try(endpoint.location, local.network_config.defaults.location)
+      subscription   = try(local.subscription_refs[try(endpoint.subscription_ref, endpoint.subscription)], endpoint.subscription)
+      resource_group = try(local.resource_group_refs[try(endpoint.resource_group_ref, endpoint.resource_group)], endpoint.resource_group)
+      subscription_display_name = try(
+        local.subscriptions_map[try(local.subscription_refs[try(endpoint.subscription_ref, endpoint.subscription)], endpoint.subscription)].display_name,
+        null
+      )
+      target               = endpoint.target
+      target_subresource   = endpoint.target_subresource
+      subnet               = endpoint.subnet
+      private_dns_zone     = endpoint.private_dns_zone
+      is_manual_connection = try(endpoint.is_manual_connection, false)
+    }
+  }
+
+  private_endpoint_storage_accounts = {
+    for endpoint in local.private_endpoints :
+    endpoint.target => local.storage_accounts[endpoint.target]
+  }
+
   firewall_definitions = try(local.network_config.gateways.firewall, [])
 
   firewalls = {

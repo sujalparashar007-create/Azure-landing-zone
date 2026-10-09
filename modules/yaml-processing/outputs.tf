@@ -118,6 +118,21 @@ output "private_dns_zone_vnet_links" {
   value       = local.private_dns_zone_vnet_links
 }
 
+output "storage_accounts" {
+  description = "Flattened storage account definitions from network.yaml"
+  value       = local.storage_accounts
+}
+
+output "private_endpoints" {
+  description = "Flattened private endpoint definitions from network.yaml"
+  value       = local.private_endpoints
+}
+
+output "private_endpoint_storage_accounts" {
+  description = "Storage accounts referenced by flattened private endpoints"
+  value       = local.private_endpoint_storage_accounts
+}
+
 output "nat_gateway_subnet_associations" {
   description = "NAT Gateway-to-subnet associations from network.yaml"
   value       = local.nat_gateway_subnet_associations
