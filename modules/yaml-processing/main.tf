@@ -236,6 +236,63 @@ locals {
     if try(local.features.nat_gateway, false)
   }
 
+  firewall_definitions = try(local.network_config.gateways.firewall, [])
+
+  firewalls = {
+    for firewall in local.firewall_definitions :
+    firewall.name => {
+      name           = firewall.name
+      location       = try(firewall.location, local.network_config.defaults.location)
+      subscription   = try(local.subscription_refs[try(firewall.subscription_ref, firewall.subscription)], firewall.subscription)
+      resource_group = try(local.resource_group_refs[try(firewall.resource_group_ref, firewall.resource_group)], firewall.resource_group)
+      subscription_display_name = try(
+        local.subscriptions_map[try(local.subscription_refs[try(firewall.subscription_ref, firewall.subscription)], firewall.subscription)].display_name,
+        null
+      )
+      sku_name                 = firewall.sku_name
+      sku_tier                 = firewall.sku_tier
+      threat_intelligence_mode = firewall.threat_intelligence_mode
+      subnet                   = firewall.subnet
+      public_ip                = firewall.public_ip
+      private_ip               = firewall.private_ip
+      policy                   = firewall.policy
+      enabled                  = try(local.features.firewall, false)
+    }
+    if try(local.features.firewall, false)
+  }
+
+  firewall_policy_definitions = try(local.network_config.gateways.firewall_policy, [])
+
+  firewall_policies = {
+    for policy in local.firewall_policy_definitions :
+    policy.name => {
+      name           = policy.name
+      location       = try(policy.location, local.network_config.defaults.location)
+      subscription   = try(local.subscription_refs[try(policy.subscription_ref, policy.subscription)], policy.subscription)
+      resource_group = try(local.resource_group_refs[try(policy.resource_group_ref, policy.resource_group)], policy.resource_group)
+      subscription_display_name = try(
+        local.subscriptions_map[try(local.subscription_refs[try(policy.subscription_ref, policy.subscription)], policy.subscription)].display_name,
+        null
+      )
+      sku                    = policy.sku
+      rule_collection_groups = try(policy.rule_collection_groups, [])
+      enabled                = try(local.features.firewall, false)
+    }
+    if try(local.features.firewall, false)
+  }
+
+  firewall_policy_groups = merge([
+    for policy_name, policy in local.firewall_policies : {
+      for group in policy.rule_collection_groups :
+      "${policy_name}/${group.name}" => {
+        name        = group.name
+        policy_name = policy_name
+        priority    = group.priority
+        collections = try(group.collections, [])
+      }
+    }
+  ]...)
+
 
   # ----------------------------------------------------------
   # Policies (tenant-level + every management group level)
@@ -666,6 +723,58 @@ check "nat_gateway_subnet_references_resolve" {
       local.nat_gateways[subnet.nat_gateway].resource_group == subnet.resource_group)
     ])
     error_message = "Every subnet NAT Gateway reference must resolve to an enabled NAT Gateway in the same subscription and resource group."
+  }
+}
+
+check "firewall_definitions_valid" {
+  assert {
+    condition     = length(local.firewall_definitions) == length(distinct([for firewall in local.firewall_definitions : firewall.name]))
+    error_message = "Firewall names must be unique in network.yaml."
+  }
+
+  assert {
+    condition = alltrue([
+      for firewall in local.firewalls :
+      firewall.subscription != null &&
+      firewall.resource_group != null &&
+      firewall.subscription_display_name != null &&
+      contains(keys(local.resource_groups_map), "${firewall.subscription}/${firewall.resource_group}") &&
+      contains(keys(local.public_ips), firewall.public_ip) &&
+      contains([for subnet in local.subnets : subnet.name], firewall.subnet) &&
+      contains(keys(local.firewall_policies), firewall.policy)
+    ])
+    error_message = "Every enabled Firewall must resolve its subscription, resource group, Public IP, subnet, and Firewall Policy references."
+  }
+}
+
+check "firewall_policy_definitions_valid" {
+  assert {
+    condition     = length(local.firewall_policy_definitions) == length(distinct([for policy in local.firewall_policy_definitions : policy.name]))
+    error_message = "Firewall Policy names must be unique in network.yaml."
+  }
+
+  assert {
+    condition = alltrue([
+      for policy in local.firewall_policies :
+      policy.subscription != null &&
+      policy.resource_group != null &&
+      policy.subscription_display_name != null &&
+      contains(keys(local.resource_groups_map), "${policy.subscription}/${policy.resource_group}")
+    ])
+    error_message = "Every enabled Firewall Policy must reference an existing subscription and resource group."
+  }
+}
+
+check "firewall_policy_group_definitions_valid" {
+  assert {
+    condition = length(flatten([
+      for policy in local.firewall_policy_definitions :
+      [for group in try(policy.rule_collection_groups, []) : "${policy.name}/${group.name}"]
+      ])) == length(distinct(flatten([
+        for policy in local.firewall_policy_definitions :
+        [for group in try(policy.rule_collection_groups, []) : "${policy.name}/${group.name}"]
+    ])))
+    error_message = "Firewall Policy rule collection group names must be unique within each policy."
   }
 }
 

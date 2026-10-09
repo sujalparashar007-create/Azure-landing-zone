@@ -28,6 +28,21 @@ output "nat_gateway_subnet_association_ids" {
   }
 }
 
+output "firewall_ids" {
+  description = "Map of Azure Firewall name -> Azure resource ID."
+  value       = { for name, firewall in azapi_resource.firewall : name => firewall.id }
+}
+
+output "firewall_policy_ids" {
+  description = "Map of Firewall Policy name -> Azure resource ID."
+  value       = { for name, policy in azapi_resource.firewall_policy : name => policy.id }
+}
+
+output "firewall_policy_group_ids" {
+  description = "Map of Firewall Policy rule collection group key -> Azure resource ID."
+  value       = { for key, group in azapi_resource.firewall_policy_group : key => group.id }
+}
+
 output "subnet_ids" {
   description = "Map of subnet key (vnet/subnet) -> Azure resource ID."
   value       = { for key, subnet in azapi_resource.subnet : key => subnet.id }

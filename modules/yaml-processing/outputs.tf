@@ -78,6 +78,21 @@ output "nat_gateway_subnet_associations" {
   value       = local.nat_gateway_subnet_associations
 }
 
+output "firewalls" {
+  description = "Enabled Azure Firewall definitions from network.yaml"
+  value       = local.firewalls
+}
+
+output "firewall_policies" {
+  description = "Enabled Azure Firewall Policy definitions from network.yaml"
+  value       = local.firewall_policies
+}
+
+output "firewall_policy_groups" {
+  description = "Enabled Azure Firewall Policy rule collection groups from network.yaml"
+  value       = local.firewall_policy_groups
+}
+
 output "subnets" {
   description = "Flattened subnets (hub + spokes) from network.yaml, keyed by vnet/subnet"
   value       = local.subnets
