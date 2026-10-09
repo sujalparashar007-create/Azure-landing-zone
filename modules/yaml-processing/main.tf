@@ -296,6 +296,46 @@ locals {
     }
   }
 
+  private_dns_forwarding_rulesets = {
+    for ruleset in try(local.network_config.dns.forwarding_rulesets, []) :
+    ruleset.name => {
+      name           = ruleset.name
+      location       = try(ruleset.location, local.network_config.defaults.location)
+      subscription   = try(local.subscription_refs[try(ruleset.subscription_ref, ruleset.subscription)], ruleset.subscription)
+      resource_group = try(local.resource_group_refs[try(ruleset.resource_group_ref, ruleset.resource_group)], ruleset.resource_group)
+      subscription_display_name = try(
+        local.subscriptions_map[try(local.subscription_refs[try(ruleset.subscription_ref, ruleset.subscription)], ruleset.subscription)].display_name,
+        null
+      )
+      outbound_endpoint = ruleset.outbound_endpoint
+      tags              = try(ruleset.tags, local.network_config.defaults.tags)
+    }
+  }
+
+  private_dns_forwarding_rules = merge([
+    for ruleset in try(local.network_config.dns.forwarding_rulesets, []) : {
+      for rule in try(ruleset.forwarding_rules, []) :
+      "${ruleset.name}/${rule.name}" => {
+        name               = rule.name
+        ruleset            = ruleset.name
+        domain_name        = rule.domain_name
+        enabled            = rule.enabled
+        target_dns_servers = rule.target_dns_servers
+      }
+    }
+  ]...)
+
+  private_dns_forwarding_ruleset_vnet_links = merge([
+    for ruleset in try(local.network_config.dns.forwarding_rulesets, []) : {
+      for vnet in try(ruleset.vnet_links, []) :
+      "${ruleset.name}/${vnet.vnet}" => {
+        name    = vnet.vnet
+        ruleset = ruleset.name
+        vnet    = vnet.vnet
+      }
+    }
+  ]...)
+
   firewall_definitions = try(local.network_config.gateways.firewall, [])
 
   firewalls = {

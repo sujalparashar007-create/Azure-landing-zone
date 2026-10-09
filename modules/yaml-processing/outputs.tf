@@ -93,6 +93,21 @@ output "private_dns_resolver_outbound_endpoints" {
   value       = local.private_dns_resolver_outbound_endpoints
 }
 
+output "private_dns_forwarding_rulesets" {
+  description = "Flattened DNS forwarding rulesets from network.yaml"
+  value       = local.private_dns_forwarding_rulesets
+}
+
+output "private_dns_forwarding_rules" {
+  description = "Flattened DNS forwarding rules from network.yaml"
+  value       = local.private_dns_forwarding_rules
+}
+
+output "private_dns_forwarding_ruleset_vnet_links" {
+  description = "Flattened DNS forwarding ruleset VNet links from network.yaml"
+  value       = local.private_dns_forwarding_ruleset_vnet_links
+}
+
 output "nat_gateway_subnet_associations" {
   description = "NAT Gateway-to-subnet associations from network.yaml"
   value       = local.nat_gateway_subnet_associations
