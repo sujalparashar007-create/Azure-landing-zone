@@ -108,6 +108,16 @@ output "private_dns_forwarding_ruleset_vnet_links" {
   value       = local.private_dns_forwarding_ruleset_vnet_links
 }
 
+output "private_dns_zones" {
+  description = "Flattened Private DNS zone definitions from network.yaml"
+  value       = local.private_dns_zones
+}
+
+output "private_dns_zone_vnet_links" {
+  description = "Flattened Private DNS zone VNet links from network.yaml"
+  value       = local.private_dns_zone_vnet_links
+}
+
 output "nat_gateway_subnet_associations" {
   description = "NAT Gateway-to-subnet associations from network.yaml"
   value       = local.nat_gateway_subnet_associations

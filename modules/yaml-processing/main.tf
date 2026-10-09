@@ -336,6 +336,34 @@ locals {
     }
   ]...)
 
+  private_dns_zones = {
+    for zone in try(local.network_config.dns.private_dns_zones, []) :
+    zone.name => {
+      name           = zone.name
+      subscription   = try(local.subscription_refs[try(zone.subscription_ref, zone.subscription)], zone.subscription)
+      resource_group = try(local.resource_group_refs[try(zone.resource_group_ref, zone.resource_group)], zone.resource_group)
+      subscription_display_name = try(
+        local.subscriptions_map[try(local.subscription_refs[try(zone.subscription_ref, zone.subscription)], zone.subscription)].display_name,
+        null
+      )
+      tags = try(zone.tags, local.network_config.defaults.tags)
+      vnet_links = try([
+        for link in zone.vnet_links : link.vnet
+      ], [])
+    }
+  }
+
+  private_dns_zone_vnet_links = merge([
+    for zone in try(local.network_config.dns.private_dns_zones, []) : {
+      for link in try(zone.vnet_links, []) :
+      "${zone.name}/${link.vnet}" => {
+        name = link.vnet
+        zone = zone.name
+        vnet = link.vnet
+      }
+    }
+  ]...)
+
   firewall_definitions = try(local.network_config.gateways.firewall, [])
 
   firewalls = {
