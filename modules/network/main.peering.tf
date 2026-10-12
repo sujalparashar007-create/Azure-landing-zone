@@ -19,7 +19,7 @@ resource "azapi_resource" "peering" {
       }
       # Azure rejects useRemoteGateways=true until the remote VNet has a
       # gateway. Keep the YAML value authoritative while deferring that
-      # capability until the VPN gateway phase enables it.
+      # capability until the remote gateway is ready.
       useRemoteGateways = each.value.use_remote_gateways && var.remote_gateways_ready
     }
   }

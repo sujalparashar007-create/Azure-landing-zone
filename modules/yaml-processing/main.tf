@@ -183,9 +183,6 @@ locals {
     try(local.features.firewall, false) ? [
       for gateway in try(local.network_config.gateways.firewall, []) : gateway.public_ip
     ] : [],
-    try(local.features.vpn_gateway, false) ? [
-      for gateway in try(local.network_config.gateways.vpn_gateway, []) : gateway.public_ip
-    ] : [],
     try(local.features.bastion, false) ? [
       for bastion in try(local.network_config.gateways.bastion, []) : bastion.public_ip
     ] : [],

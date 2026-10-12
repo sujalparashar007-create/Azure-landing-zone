@@ -35,9 +35,8 @@ Do not run `apply`, `destroy`, or CLI import as part of validation.
 
 `remote_gateways_ready` defaults to `false` because Azure rejects
 `useRemoteGateways=true` until the remote VNet has a deployed gateway. The
-YAML `use_remote_gateways` value remains the source of truth; the VPN gateway
-phase must set this capability gate to `true` to reconcile the deferred
-spoke-to-hub peerings.
+YAML `use_remote_gateways` value remains the source of truth; this capability
+gate must be set to `true` to reconcile the deferred spoke-to-hub peerings.
 
 ## Adding a component
 

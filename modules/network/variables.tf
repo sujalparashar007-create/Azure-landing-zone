@@ -28,7 +28,7 @@ variable "azapi_retry" {
 }
 
 variable "remote_gateways_ready" {
-  description = "Whether the remote VNets have a deployed gateway. When false, YAML peerings that request remote gateways are created with useRemoteGateways=false until the VPN gateway phase enables this capability."
+  description = "Whether the remote VNets have a deployed gateway. When false, YAML peerings that request remote gateways are created with useRemoteGateways=false until this capability is enabled."
   type        = bool
   default     = false
 }

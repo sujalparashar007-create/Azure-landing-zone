@@ -2,7 +2,7 @@
 # NETWORK CONFIGURATION — HUB AND SPOKE
 #
 # network.yaml is the SINGLE OWNER of the core network resources.
-# vnet-prod-hub, nsg-prod, afw-prod and vng-prod are fully defined
+# vnet-prod-hub, nsg-prod and afw-prod are fully defined
 # here (they are no longer declared in azure.yaml). This file only
 # REFERENCES kv-shared-secrets and law-shared-ops through the
 # external_references block below.
@@ -20,7 +20,7 @@
 #   Hub:                10.0.0.0/16
 #   Spoke - Shared:      10.1.0.0/16
 #   Spoke - Payments:    10.2.0.0/16
-#   On-prem (S2S VPN):  192.168.0.0/16
+#   On-prem network:    192.168.0.0/16
 # ============================================================
 
 defaults:
@@ -38,21 +38,18 @@ external_references:
   log_analytics_workspace: "law-shared-ops"
   key_vault:
     name: "kv-shared-secrets"
-    vpn_psk_secret_name: "vpn-psk-onprem"
 
 # Hourly-billed components can be switched off to deploy/destroy in
 # stages.
 #
 # Dependencies (turn off with care):
 #   firewall=false        -> spoke default routes (next hop 10.0.1.4) break
-#   vpn_gateway=false     -> peering use_remote_gateways: true becomes invalid
 #   dns_resolver=false    -> the forwarding ruleset has no outbound endpoint
 #   private_endpoint=false -> stappdatahub becomes unreachable
 #   flow_logs=true        -> requires network_watcher
 features:
   nat_gateway: true
   firewall: true
-  vpn_gateway: true
   bastion: true
   dns_resolver: true
   private_endpoint: true
@@ -184,19 +181,11 @@ connectivity:
 # PUBLIC IPs
 #
 # Each public IP is referenced exactly once by its consumer
-# (firewall / vpn gateway / bastion / nat / route server).
+# (firewall / bastion / nat / route server).
 # ============================================================
 
 public_ips:
   - name: "pip-afw-prod"
-    subscription: "sub-prod-network"
-    resource_group: "rg-prod-network"
-    location: "eastus"
-    sku: "Standard"
-    allocation: "Static"
-    zones: ["1", "2", "3"]
-
-  - name: "pip-vpn-gw"
     subscription: "sub-prod-network"
     resource_group: "rg-prod-network"
     location: "eastus"
@@ -316,7 +305,7 @@ security:
           direction: "Inbound"
           access: "Allow"
           protocol: "Tcp"
-          source_address_prefixes: ["192.168.0.0/16"]  # on-premises via S2S VPN
+          source_address_prefixes: ["192.168.0.0/16"]  # on-premises network
           source_port_range: "*"
           destination_address_prefixes: ["*"]
           destination_port_ranges: ["22", "3389"]
@@ -496,30 +485,6 @@ gateways:
                   translated_address: "10.1.0.4"   # shared-services app tier
                   translated_port: "443"
 
-  vpn_gateway:
-    - name: "vng-prod"              # owned by network.yaml
-      resource_group: "rg-prod-network"
-      subscription: "sub-prod-network"
-      sku: "VpnGw2AZ"
-      generation: "Generation2"
-      type: "RouteBased"
-      subnet: "GatewaySubnet"
-      public_ip: "pip-vpn-gw"
-      enable_bgp: true
-      bgp_asn: 65001
-
-      local_network_gateways:
-        - name: "lng-onprem-hq"
-          gateway_address: "203.0.113.25"   # on-prem VPN device, documentation range
-          address_space:
-            - "192.168.0.0/16"
-
-      connections:
-        - name: "conn-onprem-hq"
-          type: "IPsec"
-          local_network_gateway: "lng-onprem-hq"
-          shared_key_secret_name: "vpn-psk-onprem"   # external_references.key_vault
-
   bastion:
     - name: "bastion-hub"
       resource_group: "rg-prod-network"
@@ -635,4 +600,3 @@ monitoring:
       public_network_access_enabled: false
       allow_nested_items_to_be_public: false
       purpose: "Shared application blob storage accessed only via Private Endpoint"
-
