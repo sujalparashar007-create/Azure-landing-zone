@@ -133,6 +133,11 @@ output "private_endpoint_storage_accounts" {
   value       = local.private_endpoint_storage_accounts
 }
 
+output "virtual_machines" {
+  description = "Enabled flattened virtual machine definitions from network.yaml"
+  value       = local.virtual_machines
+}
+
 output "nat_gateway_subnet_associations" {
   description = "NAT Gateway-to-subnet associations from network.yaml"
   value       = local.nat_gateway_subnet_associations

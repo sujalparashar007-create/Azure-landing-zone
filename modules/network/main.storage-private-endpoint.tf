@@ -80,16 +80,26 @@ resource "azapi_resource" "private_endpoint" {
       }
       privateLinkServiceConnections = [{
         name = "${each.value.name}-connection"
-        properties = {
-          privateLinkServiceId = azapi_resource.storage_account[each.value.target].id
-          groupIds             = [each.value.target_subresource]
-          requestMessage       = null
-          privateLinkServiceConnectionState = {
-            status          = each.value.is_manual_connection ? "Pending" : "Approved"
-            description     = "Managed by Terraform"
-            actionsRequired = "None"
+        properties = merge(
+          {
+            privateLinkServiceId = azapi_resource.storage_account[each.value.target].id
+            groupIds             = [each.value.target_subresource]
+            requestMessage       = null
+          },
+          each.value.is_manual_connection ? {
+            privateLinkServiceConnectionState = {
+              status          = "Pending"
+              description     = "Managed by Terraform"
+              actionsRequired = "None"
+            }
+            } : {
+            privateLinkServiceConnectionState = {
+              status          = "Approved"
+              description     = "Auto-Approved"
+              actionsRequired = "None"
+            }
           }
-        }
+        )
       }]
     }
   }

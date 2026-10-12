@@ -53,6 +53,16 @@ output "subnet_ids" {
   value       = { for key, subnet in azapi_resource.subnet : key => subnet.id }
 }
 
+output "network_interface_ids" {
+  description = "Map of test VM name -> private NIC resource ID."
+  value       = { for name, nic in azapi_resource.network_interface : name => nic.id }
+}
+
+output "virtual_machine_ids" {
+  description = "Map of test VM name -> Azure resource ID."
+  value       = { for name, vm in azapi_resource.virtual_machine : name => vm.id }
+}
+
 output "nsg_ids" {
   description = "Map of NSG name -> Azure resource ID."
   value       = { for name, nsg in azapi_resource.nsg : name => nsg.id }

@@ -10,6 +10,7 @@ This flat Terraform module creates the VNets, VNet peerings, subnets, route tabl
 - `main.nat-gateway.tf`: enabled NAT Gateways.
 - `main.firewall.tf`: feature-gated Azure Firewall, Firewall Policy, and rule collection groups.
 - `main.subnet.tf`: subnets and inline NSG associations.
+- `main.compute.tf`: private Linux test VM and NIC.
 - `main.route-table.tf`: route tables and routes.
 - `main.nsg.tf`: NSGs and rules.
 - `providers.tf`: Terraform and provider requirements/configuration.
@@ -24,6 +25,11 @@ terraform fmt -check -recursive
 terraform validate
 terraform plan
 ```
+
+The test VM requires a sensitive password input. Set `TF_VAR_admin_password` in
+the environment when applying; do not put the password in YAML, source code,
+outputs, or committed tfvars. Terraform state can still contain sensitive VM
+values and must be protected accordingly.
 
 Do not run `apply`, `destroy`, or CLI import as part of validation.
 

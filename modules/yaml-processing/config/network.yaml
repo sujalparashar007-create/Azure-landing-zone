@@ -39,7 +39,6 @@ external_references:
   key_vault:
     name: "kv-shared-secrets"
     vpn_psk_secret_name: "vpn-psk-onprem"
-  vm_ssh_public_key_secret: "vm-admin-ssh-key"
 
 # Hourly-billed components can be switched off to deploy/destroy in
 # stages.
@@ -621,7 +620,7 @@ compute:
     - name: "vm-test-hub"
       resource_group: "rg-prod-network"
       subscription: "sub-prod-network"
-      size: "Standard_B2s"
+      size: "Standard_D2as_v4"
       os: "Linux"
       image:
         publisher: "Canonical"
@@ -632,15 +631,11 @@ compute:
         storage_account_type: "Standard_LRS"
         disk_size_gb: 30
         caching: "ReadWrite"
-      admin_username: "azureadmin"
-      authentication_type: "ssh"
-      ssh_public_key_secret: "vm-admin-ssh-key"
+      admin_username: "azureuser"
+      authentication_type: "password"
       subnet: "snet-hub-shared"
       # NSG is attached at the subnet level (snet-hub-shared -> nsg-prod)
       public_ip: null
-      boot_diagnostics_storage: "stnetlogshub"
-      data_collection_rule: "dcr-vm-hub"
-      extensions: ["AzureMonitorLinuxAgent"]
       role: "Jump box / utility VM to validate hub-spoke routing and firewall rules"
 
 # ============================================================
@@ -768,8 +763,6 @@ diagnostics:
     workspace: "law-shared-ops"
     categories:
       - "BastionAuditLogs"
-
-
 
 
 

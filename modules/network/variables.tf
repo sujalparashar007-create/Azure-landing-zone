@@ -32,3 +32,10 @@ variable "remote_gateways_ready" {
   type        = bool
   default     = false
 }
+
+variable "admin_password" {
+  description = "Required password for enabled Linux test VMs. Supply through TF_VAR_admin_password; never commit it."
+  type        = string
+  sensitive   = true
+  nullable    = false
+}

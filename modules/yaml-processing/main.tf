@@ -410,6 +410,31 @@ locals {
     endpoint.target => local.storage_accounts[endpoint.target]
   }
 
+  virtual_machines = {
+    for vm in try(local.network_config.compute.virtual_machines, []) :
+    vm.name => {
+      name           = vm.name
+      location       = try(vm.location, local.network_config.defaults.location)
+      subscription   = try(local.subscription_refs[try(vm.subscription_ref, vm.subscription)], vm.subscription)
+      resource_group = try(local.resource_group_refs[try(vm.resource_group_ref, vm.resource_group)], vm.resource_group)
+      subscription_display_name = try(
+        local.subscriptions_map[try(local.subscription_refs[try(vm.subscription_ref, vm.subscription)], vm.subscription)].display_name,
+        null
+      )
+      size                = vm.size
+      os                  = vm.os
+      image               = vm.image
+      os_disk             = vm.os_disk
+      admin_username      = vm.admin_username
+      authentication_type = vm.authentication_type
+      subnet              = vm.subnet
+      public_ip           = try(vm.public_ip, null)
+      role                = try(vm.role, null)
+      enabled             = try(local.features.test_vm, false)
+    }
+    if try(local.features.test_vm, false)
+  }
+
   firewall_definitions = try(local.network_config.gateways.firewall, [])
 
   firewalls = {
@@ -920,6 +945,32 @@ check "bastion_definitions_valid" {
       ], "${bastion.subscription}/${bastion.resource_group}/${bastion.subnet}")
     ])
     error_message = "Every enabled Bastion must resolve its subscription, resource group, Public IP, and subnet references."
+  }
+}
+
+check "virtual_machine_definitions_valid" {
+  assert {
+    condition = alltrue([
+      for vm in local.virtual_machines :
+      vm.subscription != null &&
+      vm.resource_group != null &&
+      vm.subscription_display_name != null &&
+      contains(keys(local.resource_groups_map), "${vm.subscription}/${vm.resource_group}") &&
+      vm.authentication_type == "password" &&
+      vm.public_ip == null
+    ])
+    error_message = "Every enabled virtual machine must resolve its subscription and resource group, use password authentication, and omit a public IP."
+  }
+
+  assert {
+    condition = alltrue([
+      for vm in local.virtual_machines :
+      contains([
+        for subnet in local.subnets :
+        "${subnet.subscription}/${subnet.resource_group}/${subnet.name}"
+      ], "${vm.subscription}/${vm.resource_group}/${vm.subnet}")
+    ])
+    error_message = "Every enabled virtual machine must reference a subnet in the same subscription and resource group."
   }
 }
 
