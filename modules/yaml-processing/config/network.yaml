@@ -57,7 +57,6 @@ features:
   dns_resolver: true
   private_endpoint: true
   test_vm: true
-  flow_logs: true
   route_server: false
 
 # Maps stable logical keys to the existing ALZ subscriptions and resource
@@ -221,14 +220,6 @@ public_ips:
     allocation: "Static"
     # no zones: NAT gateways are not zone-redundant by default
 
-  - name: "pip-rs-hub"
-    subscription: "sub-prod-network"
-    resource_group: "rg-prod-network"
-    location: "eastus"
-    sku: "Standard"
-    allocation: "Static"
-    zones: ["1", "2", "3"]
-
 # ============================================================
 # NAT GATEWAY
 #
@@ -296,17 +287,6 @@ routing:
           address_prefix: "10.2.0.0/16"
           next_hop_type: "VirtualAppliance"
           next_hop_ip_address: "10.0.1.4"
-
-  route_server:
-    - name: "rs-hub"
-      resource_group: "rg-prod-network"
-      subscription: "sub-prod-network"
-      subnet: "RouteServerSubnet"
-      # Confirmed (Microsoft docs): Route Server requires a public IP for
-      # its SDN/management BGP endpoint in the GA offering.
-      public_ip: "pip-rs-hub"
-      branch_to_branch_traffic_enabled: true
-      bgp_peers: []
 
 # ============================================================
 # SECURITY — NSGs
@@ -643,31 +623,7 @@ compute:
 # ============================================================
 
 monitoring:
-  log_analytics_workspace: "law-shared-ops"   # external_references
-
-  data_collection_rules:
-    - name: "dcr-vm-hub"
-      resource_group: "rg-prod-network"
-      subscription: "sub-prod-network"
-      location: "eastus"
-      workspace: "law-shared-ops"
-      syslog:
-        - facility: "auth"
-          levels: ["Warning", "Error", "Critical", "Alert", "Emergency"]
-        - facility: "daemon"
-          levels: ["Warning", "Error", "Critical", "Alert", "Emergency"]
-
   storage_accounts:
-    - name: "stnetlogshub"
-      resource_group: "rg-prod-network"
-      subscription: "sub-prod-network"
-      sku: "Standard_LRS"
-      kind: "StorageV2"
-      access_tier: "Hot"
-      https_only: true
-      minimum_tls_version: "TLS1_2"
-      purpose: "Network flow logs and firewall log archive"
-
     - name: "stappdatahub"
       resource_group: "rg-shared-ops"
       subscription: "sub-shared-ops"
@@ -679,90 +635,4 @@ monitoring:
       public_network_access_enabled: false
       allow_nested_items_to_be_public: false
       purpose: "Shared application blob storage accessed only via Private Endpoint"
-
-# ============================================================
-# NETWORK WATCHER (one per subscription)
-# ============================================================
-
-network_watcher:
-  # Azure auto-creates NetworkWatcher_<region> in NetworkWatcherRG per
-  # subscription; reference it, do not create it.
-  - name: "NetworkWatcher_eastus"
-    existing: true
-    subscription: "sub-prod-network"
-    resource_group: "NetworkWatcherRG"
-    location: "eastus"
-  - name: "NetworkWatcher_eastus"
-    existing: true
-    subscription: "sub-shared-ops"
-    resource_group: "NetworkWatcherRG"
-    location: "eastus"
-  - name: "NetworkWatcher_eastus"
-    existing: true
-    subscription: "sub-prod-payment"
-    resource_group: "NetworkWatcherRG"
-    location: "eastus"
-
-# ============================================================
-# VNET FLOW LOGS
-#
-# NSG flow logs are retired; VNet flow logs replace them.
-#
-# A VNet flow log may write to a storage account in a DIFFERENT
-# subscription than the VNet, provided the storage account is in the
-# same region and same Azure AD tenant (Microsoft Q&A / Azure blog).
-# So all three VNets can share stnetlogshub (sub-prod-network, eastus).
-# ============================================================
-
-flow_logs:
-  - target_vnet: "vnet-prod-hub"
-    storage_account: "stnetlogshub"
-    retention_days: 30
-    traffic_analytics:
-      enabled: true
-      workspace: "law-shared-ops"
-      interval_minutes: 10
-  - target_vnet: "vnet-spoke-shared"
-    storage_account: "stnetlogshub"
-    retention_days: 30
-    traffic_analytics:
-      enabled: true
-      workspace: "law-shared-ops"
-      interval_minutes: 10
-  - target_vnet: "vnet-spoke-payments"
-    storage_account: "stnetlogshub"
-    retention_days: 30
-    traffic_analytics:
-      enabled: true
-      workspace: "law-shared-ops"
-      interval_minutes: 10
-
-# ============================================================
-# DIAGNOSTICS
-#
-# Diagnostic target identity is resolved from the referenced
-# target name.
-# ============================================================
-
-diagnostics:
-  - target: "afw-prod"
-    workspace: "law-shared-ops"
-    storage_account: "stnetlogshub"
-    categories:
-      - "AzureFirewallApplicationRule"
-      - "AzureFirewallNetworkRule"
-
-  - target: "vng-prod"
-    workspace: "law-shared-ops"
-    storage_account: "stnetlogshub"
-    categories:
-      - "GatewayDiagnosticLog"
-      - "TunnelDiagnosticLog"
-
-  - target: "bastion-hub"
-    workspace: "law-shared-ops"
-    categories:
-      - "BastionAuditLogs"
-
-
 
