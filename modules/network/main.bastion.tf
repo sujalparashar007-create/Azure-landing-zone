@@ -4,7 +4,7 @@ locals {
   bastion_subscription_id = {
     for name, bastion in module.yaml_processing.bastions :
     name => one([
-      for s in data.azurerm_subscriptions.available.subscriptions :
+      for s in data.azapi_resource_list.available.output.subscriptions :
       s.subscription_id
       if s.display_name == bastion.subscription_display_name && s.state == "Enabled"
     ])

@@ -6,7 +6,7 @@ locals {
   subnet_module_subscription_id = {
     for key, subnet in module.yaml_processing.subnets :
     key => one([
-      for s in data.azurerm_subscriptions.available.subscriptions :
+      for s in data.azapi_resource_list.available.output.subscriptions :
       s.subscription_id
       if s.display_name == subnet.subscription_display_name && s.state == "Enabled"
     ])

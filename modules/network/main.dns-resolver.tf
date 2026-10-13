@@ -4,7 +4,7 @@ locals {
   private_dns_resolver_subscription_id = {
     for name, resolver in module.yaml_processing.private_dns_resolvers :
     name => one([
-      for s in data.azurerm_subscriptions.available.subscriptions :
+      for s in data.azapi_resource_list.available.output.subscriptions :
       s.subscription_id
       if s.display_name == resolver.subscription_display_name && s.state == "Enabled"
     ])

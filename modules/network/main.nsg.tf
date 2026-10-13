@@ -5,7 +5,7 @@ locals {
   nsg_subscription_id = {
     for name, nsg in module.yaml_processing.nsgs :
     name => one([
-      for s in data.azurerm_subscriptions.available.subscriptions :
+      for s in data.azapi_resource_list.available.output.subscriptions :
       s.subscription_id
       if s.display_name == nsg.subscription_display_name && s.state == "Enabled"
     ])

@@ -3,7 +3,7 @@ locals {
   virtual_machine_subscription_id = {
     for name, vm in module.yaml_processing.virtual_machines :
     name => one([
-      for s in data.azurerm_subscriptions.available.subscriptions :
+      for s in data.azapi_resource_list.available.output.subscriptions :
       s.subscription_id
       if s.display_name == vm.subscription_display_name && s.state == "Enabled"
     ])

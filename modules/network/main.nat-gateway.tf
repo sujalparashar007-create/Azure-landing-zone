@@ -3,7 +3,7 @@ locals {
   nat_gateway_subscription_id = {
     for name, nat_gateway in module.yaml_processing.nat_gateways :
     name => one([
-      for s in data.azurerm_subscriptions.available.subscriptions :
+      for s in data.azapi_resource_list.available.output.subscriptions :
       s.subscription_id
       if s.display_name == nat_gateway.subscription_display_name && s.state == "Enabled"
     ])

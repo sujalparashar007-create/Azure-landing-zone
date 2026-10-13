@@ -1,14 +1,19 @@
-Remove VPN from network config. Scope: network.yaml, modules/yaml-processing (network parts), modules/network only.
+RESUME PHASE A. A previous assistant (Copilot) stopped mid-task. Do NOT assume its edits are correct or complete.
 
-REMOVE:
-1. network.yaml: features.vpn_gateway, gateways.vpn_gateway (vng-prod, lng-onprem-hq, conn-onprem-hq), public_ips pip-vpn-gw, external_references vpn_psk_secret_name, VPN dependency comment (line ~48).
-2. yaml-processing/main.tf: the vpn_gateway public-IP filter (lines ~186-187) and any VPN-only validation/locals left behind.
-3. README/comments: VPN mentions only.
+CONTEXT: Terraform project "azure-landing-zone". Each module under modules/ is its own root with local state. Shared helper modules/yaml-processing. Architecture must stay: YAML -> yaml-processing -> null_resource + for_each -> modules -> Azure. Terraform v1.15.5, azapi 2.13.0, azurerm 4.81.0.
+SCOPE: modules/network and modules/resource-groups ONLY. Do not touch any other module or YAML.
 
-KEEP UNTOUCHED: GatewaySubnet, rt-gateway + its routes, RouteServerSubnet, all peering code/YAML (allowGatewayTransit, useRemoteGateways), remote_gateways_ready, everything else.
+GOAL: replace data.azurerm_subscriptions.available with data "azapi_resource_list" (type "Microsoft.Resources/subscriptions@2022-12-01", parent_id "/") in both modules, same pattern and naming in both (symmetry). Locals must keep identical behavior: match display_name from YAML, state == "Enabled", return subscription_id. Verify the output shape against the installed azapi 2.13.0 schema; do not guess.
 
-Rules: no state commands, no apply, no new features, no other cleanup. Keep outputs of other components unchanged.
+STEP 0 - INSPECT FIRST (read-only):
+1. git status and git diff for both modules.
+2. List what Copilot already changed in modules/network/main.vnet.tf and modules/resource-groups/main.tf, and whether the edits are complete, syntactically valid and consistent between the two modules.
+3. grep both modules for every remaining reference to azurerm_subscriptions / data.azurerm_subscriptions (network has ~13 consumer files).
 
-THEN run: terraform fmt, validate. Do NOT run plan (I run it in Git Bash because of TF_VAR_admin_password).
+STEP 1 - FINISH:
+- Fix or complete only what is missing or broken so both modules use the azapi lookup identically. No behavior change, no renamed outputs, no new features.
+- KEEP the azurerm provider block and required_providers for now. Do not remove them.
 
-REPORT: files changed (file:line), what was removed, and confirm nothing else was touched. Short.
+RULES: no terraform plan/apply/state/import commands, no terraform init -upgrade, no git commit/push. Never print secrets. Run only: terraform fmt and terraform validate in both modules (if validate fails because init is missing, just report it, do not run init).
+
+REPORT (short): files changed with file:line, the final data block, how the output is parsed, what Copilot left incomplete, validate result.

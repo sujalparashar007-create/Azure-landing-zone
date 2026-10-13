@@ -4,7 +4,7 @@ locals {
   storage_account_subscription_id = {
     for name, storage in module.yaml_processing.private_endpoint_storage_accounts :
     name => one([
-      for s in data.azurerm_subscriptions.available.subscriptions :
+      for s in data.azapi_resource_list.available.output.subscriptions :
       s.subscription_id
       if s.display_name == storage.subscription_display_name && s.state == "Enabled"
     ])
@@ -13,7 +13,7 @@ locals {
   private_endpoint_subscription_id = {
     for name, endpoint in module.yaml_processing.private_endpoints :
     name => one([
-      for s in data.azurerm_subscriptions.available.subscriptions :
+      for s in data.azapi_resource_list.available.output.subscriptions :
       s.subscription_id
       if s.display_name == endpoint.subscription_display_name && s.state == "Enabled"
     ])

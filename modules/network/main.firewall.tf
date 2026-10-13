@@ -4,7 +4,7 @@ locals {
   firewall_subscription_id = {
     for name, firewall in module.yaml_processing.firewalls :
     name => one([
-      for s in data.azurerm_subscriptions.available.subscriptions :
+      for s in data.azapi_resource_list.available.output.subscriptions :
       s.subscription_id
       if s.display_name == firewall.subscription_display_name && s.state == "Enabled"
     ])
@@ -13,7 +13,7 @@ locals {
   firewall_policy_subscription_id = {
     for name, policy in module.yaml_processing.firewall_policies :
     name => one([
-      for s in data.azurerm_subscriptions.available.subscriptions :
+      for s in data.azapi_resource_list.available.output.subscriptions :
       s.subscription_id
       if s.display_name == policy.subscription_display_name && s.state == "Enabled"
     ])

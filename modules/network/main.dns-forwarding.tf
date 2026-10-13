@@ -4,7 +4,7 @@ locals {
   private_dns_forwarding_ruleset_subscription_id = {
     for name, ruleset in module.yaml_processing.private_dns_forwarding_rulesets :
     name => one([
-      for s in data.azurerm_subscriptions.available.subscriptions :
+      for s in data.azapi_resource_list.available.output.subscriptions :
       s.subscription_id
       if s.display_name == ruleset.subscription_display_name && s.state == "Enabled"
     ])

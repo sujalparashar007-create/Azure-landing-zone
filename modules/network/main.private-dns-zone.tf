@@ -3,7 +3,7 @@ locals {
   private_dns_zone_subscription_id = {
     for name, zone in module.yaml_processing.private_dns_zones :
     name => one([
-      for s in data.azurerm_subscriptions.available.subscriptions :
+      for s in data.azapi_resource_list.available.output.subscriptions :
       s.subscription_id
       if s.display_name == zone.subscription_display_name && s.state == "Enabled"
     ])

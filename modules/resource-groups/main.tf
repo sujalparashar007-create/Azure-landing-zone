@@ -11,13 +11,20 @@ module "yaml_processing" {
 # with the same display name).
 # `one()` makes the lookup deterministic: it errors on duplicate display
 # names and returns null when there is no match (validated below).
-data "azurerm_subscriptions" "available" {}
+data "azapi_resource_list" "available" {
+  type      = "Microsoft.Resources/subscriptions@2022-12-01"
+  parent_id = "/"
+
+  response_export_values = {
+    subscriptions = "value[].{subscription_id:subscriptionId, display_name:displayName, state:state}"
+  }
+}
 
 locals {
   subscription_ids = {
     for name, sub in module.yaml_processing.subscriptions :
     name => one([
-      for s in data.azurerm_subscriptions.available.subscriptions :
+      for s in data.azapi_resource_list.available.output.subscriptions :
       s.subscription_id
       if s.display_name == sub.display_name && s.state == "Enabled"
     ])

@@ -12,13 +12,20 @@ module "yaml_processing" {
 # (subscription_ref -> subscription -> display_name) is performed by the
 # yaml-processing module; this data source only maps the resolved value to
 # its Azure ID.
-data "azurerm_subscriptions" "available" {}
+data "azapi_resource_list" "available" {
+  type      = "Microsoft.Resources/subscriptions@2022-12-01"
+  parent_id = "/"
+
+  response_export_values = {
+    subscriptions = "value[].{subscription_id:subscriptionId, display_name:displayName, state:state}"
+  }
+}
 
 locals {
   vnet_subscription_id = {
     for name, vnet in module.yaml_processing.vnets :
     name => one([
-      for s in data.azurerm_subscriptions.available.subscriptions :
+      for s in data.azapi_resource_list.available.output.subscriptions :
       s.subscription_id
       if s.display_name == vnet.subscription_display_name && s.state == "Enabled"
     ])
