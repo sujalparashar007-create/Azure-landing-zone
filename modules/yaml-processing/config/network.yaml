@@ -186,24 +186,24 @@ connectivity:
 
 public_ips:
   - name: "pip-afw-prod"
-    subscription: "sub-prod-network"
-    resource_group: "rg-prod-network"
+    subscription_ref: "network"
+    resource_group_ref: "network"
     location: "eastus"
     sku: "Standard"
     allocation: "Static"
     zones: ["1", "2", "3"]
 
   - name: "pip-bastion-hub"
-    subscription: "sub-prod-network"
-    resource_group: "rg-prod-network"
+    subscription_ref: "network"
+    resource_group_ref: "network"
     location: "eastus"
     sku: "Standard"
     allocation: "Static"
     zones: ["1", "2", "3"]
 
   - name: "pip-nat-hub"
-    subscription: "sub-prod-network"
-    resource_group: "rg-prod-network"
+    subscription_ref: "network"
+    resource_group_ref: "network"
     location: "eastus"
     sku: "Standard"
     allocation: "Static"
@@ -219,8 +219,8 @@ public_ips:
 
 nat:
   - name: "nat-gw-hub"
-    resource_group: "rg-prod-network"
-    subscription: "sub-prod-network"
+    resource_group_ref: "network"
+    subscription_ref: "network"
     sku: "Standard"
     public_ip: "pip-nat-hub"
 
@@ -235,8 +235,8 @@ nat:
 routing:
   route_tables:
     - name: "rt-spoke-shared"
-      resource_group: "rg-shared-ops"
-      subscription: "sub-shared-ops"
+      resource_group_ref: "shared_services"
+      subscription_ref: "shared_services"
       bgp_route_propagation_enabled: true
       routes:
         - name: "default-via-firewall"
@@ -249,8 +249,8 @@ routing:
           next_hop_ip_address: "10.0.1.4"
 
     - name: "rt-spoke-payments"
-      resource_group: "rg-prod-payment-app"
-      subscription: "sub-prod-payment"
+      resource_group_ref: "payments"
+      subscription_ref: "payments"
       bgp_route_propagation_enabled: true
       routes:
         - name: "default-via-firewall"
@@ -263,8 +263,8 @@ routing:
           next_hop_ip_address: "10.0.1.4"
 
     - name: "rt-gateway"
-      resource_group: "rg-prod-network"
-      subscription: "sub-prod-network"
+      resource_group_ref: "network"
+      subscription_ref: "network"
       # GatewaySubnet route tables MUST keep BGP propagation enabled.
       bgp_route_propagation_enabled: true
       routes:
@@ -431,8 +431,8 @@ security:
 gateways:
   firewall:
     - name: "afw-prod"              # owned by network.yaml
-      resource_group: "rg-prod-network"
-      subscription: "sub-prod-network"
+      resource_group_ref: "network"
+      subscription_ref: "network"
       sku_name: "AZFW_VNet"
       sku_tier: "Standard"
       threat_intelligence_mode: "Alert"
@@ -443,8 +443,8 @@ gateways:
 
   firewall_policy:
     - name: "fwp-prod"
-      resource_group: "rg-prod-network"
-      subscription: "sub-prod-network"
+      resource_group_ref: "network"
+      subscription_ref: "network"
       sku: "Standard"
       rule_collection_groups:
         - name: "rcg-network"
@@ -487,8 +487,8 @@ gateways:
 
   bastion:
     - name: "bastion-hub"
-      resource_group: "rg-prod-network"
-      subscription: "sub-prod-network"
+      resource_group_ref: "network"
+      subscription_ref: "network"
       sku: "Standard"
       subnet: "AzureBastionSubnet"
       public_ip: "pip-bastion-hub"
@@ -504,8 +504,8 @@ gateways:
 dns:
   private_dns_resolver:
     - name: "dnspr-hub"
-      resource_group: "rg-prod-network"
-      subscription: "sub-prod-network"
+      resource_group_ref: "network"
+      subscription_ref: "network"
       vnet: "vnet-prod-hub"
   resolver_endpoints:
     inbound:
@@ -519,8 +519,8 @@ dns:
         subnet: "PrivateResolverOutbound"
   forwarding_rulesets:
     - name: "ruleset-hub-corp"
-      resource_group: "rg-prod-network"
-      subscription: "sub-prod-network"
+      resource_group_ref: "network"
+      subscription_ref: "network"
       outbound_endpoint: "outbound-hub"
       forwarding_rules:
         - name: "fwd-corp-example"
@@ -535,8 +535,8 @@ dns:
         - vnet: "vnet-spoke-payments"
   private_dns_zones:
     - name: "privatelink.blob.core.windows.net"
-      resource_group: "rg-prod-network"
-      subscription: "sub-prod-network"
+      resource_group_ref: "network"
+      subscription_ref: "network"
       vnet_links:
         - vnet: "vnet-prod-hub"
         - vnet: "vnet-spoke-shared"
@@ -548,8 +548,8 @@ dns:
 
 private_endpoints:
   - name: "pe-stappdata-blob"
-    resource_group: "rg-shared-ops"
-    subscription: "sub-shared-ops"
+    resource_group_ref: "shared_services"
+    subscription_ref: "shared_services"
     target: "stappdatahub"
     target_subresource: "blob"
     subnet: "snet-shared-data"
@@ -563,8 +563,8 @@ private_endpoints:
 compute:
   virtual_machines:
     - name: "vm-test-hub"
-      resource_group: "rg-prod-network"
-      subscription: "sub-prod-network"
+      resource_group_ref: "network"
+      subscription_ref: "network"
       size: "Standard_D2as_v4"
       os: "Linux"
       image:
@@ -590,8 +590,8 @@ compute:
 monitoring:
   storage_accounts:
     - name: "stappdatahub"
-      resource_group: "rg-shared-ops"
-      subscription: "sub-shared-ops"
+      resource_group_ref: "shared_services"
+      subscription_ref: "shared_services"
       sku: "Standard_LRS"
       kind: "StorageV2"
       access_tier: "Hot"
