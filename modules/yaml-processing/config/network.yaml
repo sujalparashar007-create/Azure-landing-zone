@@ -32,13 +32,6 @@ defaults:
     Environment: "prod"
     Project: "landing-zone"
 
-# These are not defined in any YAML yet; they will be created by a
-# later shared-services phase.
-external_references:
-  log_analytics_workspace: "law-shared-ops"
-  key_vault:
-    name: "kv-shared-secrets"
-
 # Hourly-billed components can be switched off to deploy/destroy in
 # stages.
 #

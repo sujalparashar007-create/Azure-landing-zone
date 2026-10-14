@@ -1,30 +1,59 @@
-Complete the remaining validation for the two new spoke VMs.
 
-1. Inspect the existing hub VM and both new VM definitions. Confirm they use the intended admin username, authentication method, and existing var.admin_password mechanism. Do not expose or print any password.
+Phase 1 — Azure-Side DNS Validation (READ-ONLY)
 
-2. Verify:
-   - vm-test-shared → vnet-spoke-shared / snet-shared-app
-   - vm-test-payments → vnet-spoke-payments / snet-payments-app
-   - NICs are generated correctly and attached to their respective VMs.
-   - Both VMs have no public IP.
-   - Both VMs use the correct shared_services/payments subscription and resource-group references.
-   - Existing Bastion can be used to access both VMs.
-   - Payments NSG SSH rule allows only TCP 22 from 10.0.2.0/26, with no priority conflict.
-   - Shared Spoke's existing NSG permits Bastion SSH.
-   - Disabled DNAT remains disabled.
+Goal:
+Independently validate the Azure DNS configuration and identify the evidence-based root cause of the current DNS issue.
 
-3. Review the YAML flattening logic, VM/NIC resource loops, dependencies, and reference-resolution validations. Ensure the new definitions flow through the existing YAML-driven AzAPI architecture without duplicated hard-coded configuration.
+Instructions:
 
-4. Run terraform fmt and terraform validate for modules/network and modules/yaml-processing if needed. Do not change unrelated files or modules. Ignore guide.md completely.
+1. Check Azure CLI access:
+   - Run `az account show`.
+   - If authentication is missing, check whether an existing Azure CLI session or accessible profile is available.
+   - Do not run `az login` or change CLI profiles automatically.
+   - If authentication is unavailable, report the exact blocker and stop Azure-side checks.
 
-5. Do not set, request, print, or modify the password. Do not run terraform plan; I will set the password and run the plan myself in my terminal.
+2. If authenticated, identify the correct project subscription and validate:
+   - VNet DNS server configuration.
+   - Private Endpoint connection state and associated NIC private IP.
+   - Relevant Private DNS Zone and expected A record.
+   - Private DNS Zone VNet links and their provisioning states.
+   - DNS zone, endpoint, VNet and VM resource relationships.
 
-6. Do not run terraform apply, terraform destroy, or state-changing commands.
+3. VM-side DNS validation:
+   - If an existing authorized SSH/Bastion session is available, collect:
+     - `cat /etc/resolv.conf`
+     - `resolvectl status`
+     - `dig <expected-private-fqdn>`
+   - Do not create a VM, open SSH access, change network rules, or initiate a new connection requiring configuration changes.
+   - If VM access is unavailable, report the missing evidence.
 
-7. Report:
-   - Whether the same existing var.admin_password works for all three VMs.
-   - Any issues found and the exact files/lines involved.
-   - Validation results.
-   - Whether the implementation is ready for me to run terraform plan.
+4. Report actual command outputs or concise evidence:
+   - Check performed.
+   - Resource name and resource group.
+   - Expected vs actual result.
+   - Pass / Fail / Blocked.
+   - Exact error message, if any.
+   - Evidence-based findings and remaining unknowns.
 
-Stop after the audit. Do not apply anything or make unnecessary changes.
+5. Root-cause decision:
+   - Identify a root cause only when supported by collected evidence.
+   - Clearly distinguish confirmed findings from hypotheses.
+   - If evidence is insufficient, state exactly what is missing.
+
+STRICT SAFETY:
+- READ-ONLY ONLY.
+- Do not edit, create, delete, import, or deploy any resource.
+- Do not modify Terraform, YAML, scripts, provider configuration, or state.
+- Do not run Terraform apply/destroy or any remediation.
+- Do not print secrets, credentials, tokens, or sensitive connection strings.
+- Do not claim a check passed unless its result was actually verified.
+
+Final response:
+Provide a concise DNS validation report with:
+1. Azure authentication status.
+2. Validation results for every check.
+3. Actual evidence and errors.
+4. Confirmed root cause, or why it remains unconfirmed.
+5. Exact next step required to unblock Phase 1.
+
+Stop after reporting. Wait for approval before making any changes.
