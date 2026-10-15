@@ -1,19 +1,14 @@
+Implement only the approved minimal cleanup in modules/yaml-processing/config/network.yaml.
 
-Resume Phase 1 — Azure-side DNS validation.
+1. Correct the stale header comments that refer to external_references and explain that subscription/resource-group references are resolved through the existing references block.
+2. Update the tags comment to accurately state that supported resource definitions inherit defaults.tags where implemented, while the current VNet and subnet implementations do not assign tags. Do not add tags to resources or change implementation code.
+3. Remove the trailing whitespace reported at line 34 without changing the meaning or formatting of surrounding content.
 
-Azure CLI is authenticated in my terminal. `az account list` shows four enabled subscriptions, including Production Network.
+Strict exclusions:
+- Do not change either spoke-to-hub use_remote_gateways value.
+- Do not change remote_gateways_ready or variables.tf.
+- Do not add/remove feature flags or YAML sections.
+- Do not edit guide.md or any other file.
+- Do not run terraform apply/destroy/import or change Terraform state/Azure resources.
 
-Subscription ID:
-8e3af5dd-dd04-45fb-9986-23ac2180a4cf
-
-1. First run `az account show` in your own execution environment.
-2. If authenticated, verify the active subscription ID. If not, report the exact environment/profile error; do not attempt login or change profiles.
-3. If the correct subscription is active and accessible, perform the previously requested read-only DNS checks:
-   - VNet DNS configuration
-   - Private Endpoint connection state and NIC private IP
-   - Private DNS Zone A record and VNet links
-   - Relevant DNS/VNet/VM relationships
-4. Collect VM-side DNS evidence only if an existing authorized session is available.
-5. Report exact results, resource names, errors, and missing evidence. Distinguish confirmed findings from hypotheses.
-
-STRICT: Read-only only. No file edits, Terraform changes, resource modifications, or remediation. Do not assume your execution environment shares my terminal's Azure CLI session.
+Before editing, inspect the current diff and preserve unrelated existing changes. After editing, show the exact diff and run git diff --check. Confirm only the intended lines in network.yaml changed. Do not claim success unless command output confirms it. Stop and report if the current file differs materially from the reviewed findings; do not overwrite or revert unrelated user changes.

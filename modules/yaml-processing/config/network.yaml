@@ -3,18 +3,18 @@
 #
 # network.yaml is the SINGLE OWNER of the core network resources.
 # vnet-prod-hub, nsg-prod and afw-prod are fully defined
-# here (they are no longer declared in azure.yaml). This file only
-# REFERENCES kv-shared-secrets and law-shared-ops through the
-# external_references block below.
+# here (they are no longer declared in azure.yaml). Subscription and
+# resource-group references are resolved through the `references` block below.
 #
 # Top-level sections:
-#   defaults, external_references, features, network, connectivity,
+#   defaults, references, features, network, connectivity,
 #   public_ips, nat, routing, security, gateways, dns,
 #   private_endpoints, compute, monitoring, network_watcher,
 #   flow_logs, diagnostics.
 #
-# Tags: every resource inherits the Environment / Project tags from
-# `defaults.tags`; the tag map is not duplicated per resource.
+# Tags: supported resource definitions inherit Environment / Project tags
+# from `defaults.tags` where implemented; VNet and subnet implementations
+# currently do not assign tags.
 #
 # CIDR allocation (non-overlapping):
 #   Hub:                10.0.0.0/16
